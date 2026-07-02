@@ -322,25 +322,37 @@ window.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
   showOnly('loadingSection');
+
+  async function tryLoad(url, isApi) {
+    var headers = isApi ? { 'Accept': 'application/vnd.github.v3+json' } : {};
+    var resp = await fetch(url, { headers: headers });
+    if (!resp.ok) return null;
+    var json = await resp.json();
+    if (isApi) {
+      var str = decodeURIComponent(escape(atob(json.content.replace(/\n/g,''))));
+      return JSON.parse(str);
+    }
+    return json;
+  }
+
   try {
-    // GitHub API로 읽기 (CDN 캐시 없이 항상 최신 데이터)
-    var apiResp = await fetch(GH_API, {
-      headers: { 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (apiResp.ok) {
-      var fileInfo = await apiResp.json();
-      var jsonStr = decodeURIComponent(escape(atob(fileInfo.content.replace(/\n/g, ''))));
-      var data = JSON.parse(jsonStr);
-      if (data && data.impark && data.impark.length > 0) {
-        window._ALL_IMPARK    = data.impark  || [];
-        window._ALL_RECALL_DB = data.recall  || [];
-        window._ALL_PERSONS   = data.persons || [];
-        var updated = data.updated || '';
-        document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
-        window._FRESH_UPLOAD = false;
-        showNameSelection();
-        return;
-      }
+    // 1차: GitHub API (캐시 없음)
+    var data = null;
+    try { data = await tryLoad(GH_API, true); } catch(e) {}
+    // 2차: raw URL (API 실패 시 폴백)
+    if (!data || !data.impark || !data.impark.length) {
+      try { data = await tryLoad(GH_RAW + '?t=' + Date.now(), false); } catch(e) {}
+    }
+
+    if (data && data.impark && data.impark.length > 0) {
+      window._ALL_IMPARK    = data.impark  || [];
+      window._ALL_RECALL_DB = data.recall  || [];
+      window._ALL_PERSONS   = data.persons || [];
+      var updated = data.updated || '';
+      document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
+      window._FRESH_UPLOAD = false;
+      showNameSelection();
+      return;
     }
   } catch(e) {}
   // 데이터 없으면 업로드 화면
