@@ -8,8 +8,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;background:#f0f2f5;color:#222}
 
+/* ── 로딩 ── */
+#loadingSection{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.spinner{width:44px;height:44px;border:4px solid #e0e8f0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:.95rem;color:#888;font-weight:600}
+
 /* ── 업로드 화면 ── */
-#uploadSection{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+#uploadSection{min-height:100vh;display:none;align-items:center;justify-content:center;padding:40px 20px}
 .upload-card{background:#fff;border-radius:20px;padding:48px 40px;max-width:680px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.10)}
 .upload-card h1{font-size:1.4rem;font-weight:800;color:#1a3a5c;margin-bottom:8px}
 .upload-card .subtitle{font-size:.88rem;color:#888;margin-bottom:32px}
@@ -30,7 +36,7 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;backgrou
 .tip strong{color:#1a3a5c}
 
 /* ── 이름 선택 화면 ── */
-#nameSection{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+#nameSection{min-height:100vh;display:none;align-items:center;justify-content:center;padding:40px 20px}
 .name-card{background:#fff;border-radius:20px;padding:48px 40px;max-width:480px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.10)}
 .name-card h2{font-size:1.25rem;font-weight:800;color:#1a3a5c;margin-bottom:6px;text-align:center}
 .name-card .name-sub{font-size:.85rem;color:#888;margin-bottom:28px;text-align:center}
@@ -38,9 +44,13 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;backgrou
 .name-btn{padding:16px 20px;background:#f5f8fb;border:2px solid #e0e8f0;border-radius:12px;font-size:1rem;font-weight:700;color:#1a3a5c;cursor:pointer;text-align:left;transition:.2s;display:flex;justify-content:space-between;align-items:center;width:100%}
 .name-btn:hover{background:#e8f0fa;border-color:#1a3a5c;transform:translateX(4px)}
 .name-btn .name-cnt{font-size:.78rem;color:#888;font-weight:400}
-.name-back{margin-top:20px;text-align:center}
-.name-back button{background:none;border:none;color:#aaa;font-size:.83rem;cursor:pointer;text-decoration:underline}
-.name-back button:hover{color:#555}
+.name-footer{margin-top:24px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.name-updated{font-size:.78rem;color:#bbb}
+.btn-upload-new{background:none;border:none;color:#aaa;font-size:.83rem;cursor:pointer;text-decoration:underline}
+.btn-upload-new:hover{color:#555}
+.btn-save-github{width:100%;padding:14px;background:#2ea44f;color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;transition:.2s;margin-top:4px}
+.btn-save-github:hover{background:#22863a}
+.btn-save-github:disabled{background:#94d3a2;cursor:not-allowed}
 
 /* ── 대시보드 ── */
 header{background:#1a3a5c;color:#fff;padding:16px 32px;display:flex;justify-content:space-between;align-items:center}
@@ -49,8 +59,6 @@ header h1{font-size:1.25rem;font-weight:700}
 .header-right span{font-size:.82rem;opacity:.75}
 .btn-change{padding:7px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap}
 .btn-change:hover{background:rgba(255,255,255,0.25)}
-.btn-mobile-save{padding:7px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:700;white-space:nowrap}
-.btn-mobile-save:hover{background:rgba(255,255,255,0.25)}
 .container{max-width:1400px;margin:0 auto;padding:24px 20px}
 .recall-box{background:#fff;border-radius:12px;padding:22px 24px;box-shadow:0 1px 6px rgba(0,0,0,.08);margin-bottom:22px;border-left:5px solid #7b1fa2}
 .recall-box h2{font-size:1.05rem;font-weight:700;color:#4a148c;margin-bottom:4px}
@@ -99,7 +107,7 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
 .hidden-info{font-size:.78rem;color:#999;margin-left:4px}
 .btn-restore{padding:4px 10px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:.78rem;display:none}
 .btn-restore:hover{background:#eee}
-/* 복원 모달 */
+/* 모달 공통 */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal-box{background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:560px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.18)}
@@ -117,15 +125,29 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
 .btn-modal-sel{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
 .btn-modal-cancel{background:#f5f5f5;color:#666;border:1px solid #ddd}
 .modal-selall{font-size:.78rem;color:#1a3a5c;cursor:pointer;text-decoration:underline;margin-right:auto;align-self:center}
+/* 토큰 모달 */
+#tokenModal .modal-box{max-width:420px;max-height:none}
+.token-input{width:100%;padding:10px 12px;border:2px solid #ccd6e0;border-radius:8px;font-size:.9rem;margin:12px 0;outline:none;font-family:monospace}
+.token-input:focus{border-color:#1a3a5c}
+.token-help{font-size:.78rem;color:#888;line-height:1.6;margin-bottom:16px}
+.token-help a{color:#1a3a5c}
+.btn-token-save{width:100%;padding:12px;background:#2ea44f;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer}
+.btn-token-cancel{width:100%;padding:10px;background:#f5f5f5;color:#666;border:1px solid #ddd;border-radius:8px;font-size:.9rem;cursor:pointer;margin-top:8px}
 </style>
 </head>
 <body>
 
-<!-- ── 업로드 화면 ── -->
+<!-- ── 로딩 ── -->
+<div id="loadingSection" style="display:flex">
+  <div class="spinner"></div>
+  <div class="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<!-- ── 업로드 화면 (관리자용) ── -->
 <div id="uploadSection">
   <div class="upload-card">
     <h1>📊 유통기한 관리 대시보드</h1>
-    <p class="subtitle">출고현황조회 파일 3개를 업로드하고 분석 버튼을 누르세요.</p>
+    <p class="subtitle">출고현황조회 파일을 업로드하고 분석 후 팀원들과 공유하세요.</p>
     <div class="file-grid">
       <div class="file-box" id="box_매출">
         <div class="icon">📄</div>
@@ -150,19 +172,21 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
     <div id="progressMsg">⏳ 분석 중입니다. 잠시만 기다려주세요...</div>
     <div class="tip">
       <strong>사용법:</strong> 영업지원시스템 → 출고현황조회 → 매출 / 반품불가 / 향정 각각 저장 후 업로드.<br>
-      파일은 브라우저 안에서만 처리되며 외부로 전송되지 않습니다.
+      분석 후 <strong>☁️ GitHub에 저장</strong>하면 팀원들이 이 주소에서 바로 확인 가능합니다.
     </div>
   </div>
 </div>
 
 <!-- ── 이름 선택 화면 ── -->
-<div id="nameSection" style="display:none">
+<div id="nameSection">
   <div class="name-card">
     <h2>👤 담당자를 선택하세요</h2>
     <p class="name-sub">본인 이름을 클릭하면 데이터를 확인할 수 있습니다.</p>
     <div class="name-list" id="nameList"></div>
-    <div class="name-back">
-      <button onclick="backToUpload()">← 파일 다시 업로드</button>
+    <div class="name-footer">
+      <span class="name-updated" id="nameUpdated"></span>
+      <button id="btnSaveGithub" class="btn-save-github" onclick="saveToGitHub()" style="display:none">☁️ GitHub에 저장 (팀원 공유)</button>
+      <button class="btn-upload-new" onclick="goToUpload()">← 새 파일 업로드</button>
     </div>
   </div>
 </div>
@@ -174,7 +198,6 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
     <div class="header-right">
       <span id="headerInfo"></span>
       <button class="btn-change" onclick="backToNames()" id="btnChangePerson">👤 담당자 변경</button>
-      <button class="btn-mobile-save" onclick="saveMobile()">📱 모바일용 저장</button>
     </div>
   </header>
   <div class="container">
@@ -203,7 +226,7 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
       <div class="desc">복지부 회수 명령 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>
       <div class="recall-input-row">
         <select id="searchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>
-        <input type="text" id="recallInput" placeholder="예: 049594 458 600 또는 049594,122600,122603" onkeydown="if(event.key==='Enter')doRecallSearch()">
+        <input type="text" id="recallInput" placeholder="예: 049594 458 600" onkeydown="if(event.key==='Enter')doRecallSearch()">
         <button class="btn-search" onclick="doRecallSearch()">조회</button>
         <button class="btn-clear" onclick="clearRecall()">초기화</button>
       </div>
@@ -220,7 +243,7 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
       <div class="desc">약가인하 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>
       <div class="recall-input-row">
         <select id="priceSearchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>
-        <input type="text" id="priceInput" placeholder="예: 049594 458 600 또는 049594,122600,122603" onkeydown="if(event.key==='Enter')doPriceSearch()">
+        <input type="text" id="priceInput" placeholder="예: 049594 458 600" onkeydown="if(event.key==='Enter')doPriceSearch()">
         <button class="btn-search" onclick="doPriceSearch()">조회</button>
         <button class="btn-clear" onclick="clearPrice()">초기화</button>
       </div>
@@ -250,49 +273,121 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
   </div>
 </div>
 
+<!-- GitHub 토큰 모달 -->
+<div class="modal-overlay" id="tokenModal">
+  <div class="modal-box">
+    <h3>🔑 GitHub 토큰 설정</h3>
+    <p class="modal-sub">팀원 공유를 위해 GitHub Personal Access Token이 필요합니다.</p>
+    <div class="token-help">
+      1. <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> 접속<br>
+      2. Note: 아무 이름 입력 → Expiration: No expiration<br>
+      3. <strong>repo</strong> 체크 → Generate token<br>
+      4. 생성된 토큰(ghp_로 시작) 복사 후 아래 입력
+    </div>
+    <input type="password" class="token-input" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <button class="btn-token-save" onclick="saveToken()">저장하고 공유하기</button>
+    <button class="btn-token-cancel" onclick="closeTokenModal()">취소</button>
+  </div>
+</div>
+
 <script>
+// ── GitHub 설정 ──
+const GH_OWNER = 'hkj81';
+const GH_REPO  = 'dashboard';
+const GH_FILE  = 'data.json';
+const GH_RAW   = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/' + GH_FILE;
+const GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + GH_FILE;
+
 // ── 전역 데이터 ──
 const files = {매출:null, 반품불가:null, 향정:null};
-window._ALL_IMPARK = [];    // 전체 담당자 데이터
-window._ALL_RECALL_DB = []; // 전체 담당자 recall
-window._ALL_PERSONS = [];   // 담당자 목록
-window._IMPARK = [];        // 현재 선택된 담당자 데이터
-window._RECALL_DB = [];
+window._ALL_IMPARK    = [];
+window._ALL_RECALL_DB = [];
+window._ALL_PERSONS   = [];
+window._IMPARK        = [];
+window._RECALL_DB     = [];
 window._CURRENT_PERSON = '';
+window._FRESH_UPLOAD   = false; // 방금 업로드한 경우
 
+// ── 초기화: 페이지 로드 시 GitHub에서 데이터 가져오기 ──
+window.addEventListener('DOMContentLoaded', initApp);
+
+async function initApp() {
+  showOnly('loadingSection');
+  try {
+    const resp = await fetch(GH_RAW + '?t=' + Date.now());
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.impark && data.impark.length > 0) {
+        window._ALL_IMPARK    = data.impark  || [];
+        window._ALL_RECALL_DB = data.recall  || [];
+        window._ALL_PERSONS   = data.persons || [];
+        const updated = data.updated || '';
+        document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
+        window._FRESH_UPLOAD = false;
+        if (window._ALL_PERSONS.length === 1) {
+          selectPerson(window._ALL_PERSONS[0]);
+        } else {
+          showNameSelection();
+        }
+        return;
+      }
+    }
+  } catch(e) {}
+  // 데이터 없으면 업로드 화면
+  showOnly('uploadSection');
+}
+
+// ── 화면 전환 ──
+function showOnly(id) {
+  ['loadingSection','uploadSection','nameSection','dashboardSection'].forEach(function(s) {
+    var el = document.getElementById(s);
+    if (s === id) {
+      el.style.display = (s === 'dashboardSection') ? 'block' : 'flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+function goToUpload() {
+  showOnly('uploadSection');
+}
+
+// ── 파일 업로드 ──
 function onFile(input, type) {
-  const f = input.files[0];
+  var f = input.files[0];
   if (!f) return;
   files[type] = f;
-  document.getElementById('box_'+type).classList.add('has-file');
-  const el = document.getElementById('name_'+type);
+  document.getElementById('box_' + type).classList.add('has-file');
+  var el = document.getElementById('name_' + type);
   el.textContent = f.name;
   el.style.display = 'block';
   document.getElementById('btnAnalyze').disabled = !files['매출'];
 }
 
 function readFileEUCKR(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const decoder = new TextDecoder('euc-kr');
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var decoder = new TextDecoder('euc-kr');
       resolve(decoder.decode(e.target.result));
     };
+    reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
 }
 
 function parseTSV(text) {
-  const lines = text.replace(/\r/g,'').split('\n');
+  var lines = text.replace(/\r/g, '').split('\n');
   if (lines.length < 2) return [];
-  const headers = lines[0].split('\t').map(h=>h.trim());
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
+  var headers = lines[0].split('\t').map(function(h){ return h.trim(); });
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim();
     if (!line) continue;
-    const cols = lines[i].split('\t');
-    const row = {};
-    headers.forEach((h,j) => { row[h] = (cols[j]||'').trim(); });
+    var cols = lines[i].split('\t');
+    var row = {};
+    headers.forEach(function(h, j){ row[h] = (cols[j] || '').trim(); });
     rows.push(row);
   }
   return rows;
@@ -300,135 +395,131 @@ function parseTSV(text) {
 
 function parseExp(yymmdd) {
   if (!yymmdd || yymmdd.length < 6) return null;
-  const yy = parseInt(yymmdd.slice(0,2),10);
-  const mm = parseInt(yymmdd.slice(2,4),10);
-  const dd = parseInt(yymmdd.slice(4,6),10);
+  var yy = parseInt(yymmdd.slice(0,2), 10);
+  var mm = parseInt(yymmdd.slice(2,4), 10);
+  var dd = parseInt(yymmdd.slice(4,6), 10);
   if (!mm || !dd) return null;
-  return new Date(2000+yy, mm-1, dd);
+  return new Date(2000 + yy, mm - 1, dd);
 }
 
 function fmtDate8(s) {
-  if (!s || s.length < 8) return s||'';
-  return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  if (!s || s.length < 8) return s || '';
+  return s.slice(0,4) + '-' + s.slice(4,6) + '-' + s.slice(6,8);
 }
 
-// ── 분석 메인 ──
+// ── 분석 ──
 async function doAnalysis() {
   if (!files['매출']) { alert('매출 파일은 필수입니다.'); return; }
   document.getElementById('btnAnalyze').disabled = true;
   document.getElementById('progressMsg').style.display = 'block';
-  await new Promise(r=>setTimeout(r,50));
+  await new Promise(function(r){ setTimeout(r, 50); });
 
   try {
-    const texts = {};
-    for (const [type, file] of Object.entries(files)) {
-      if (file) texts[type] = await readFileEUCKR(file);
+    var texts = {};
+    for (var type in files) {
+      if (files[type]) texts[type] = await readFileEUCKR(files[type]);
     }
-    const rowSets = {};
-    for (const [type, text] of Object.entries(texts)) {
-      rowSets[type] = parseTSV(text);
+    var rowSets = {};
+    for (var t in texts) {
+      rowSets[t] = parseTSV(texts[t]);
     }
 
-    const today = new Date();
+    var today = new Date();
     today.setHours(0,0,0,0);
-    const cutoff = new Date(today);
-    cutoff.setMonth(cutoff.getMonth()+7);
+    var cutoff = new Date(today);
+    cutoff.setMonth(cutoff.getMonth() + 7);
 
-    // ── IMPARK 생성 (담당자 포함) ──
-    const ALL_IMPARK = [];
-    const typeMap = {매출:'일반매출', 반품불가:'반품불가', 향정:'향정'};
-    for (const [type, rows] of Object.entries(rowSets)) {
-      const 구분 = typeMap[type];
-      const groups = {};
-      for (const row of rows) {
-        const key = (row['매출처명']||'')+'|'+(row['코드']||'')+'|'+(row['상품명']||'')+'|'+(row['규격']||'')+'|'+(row['유효기한']||'')+'|'+(row['일련번호']||'');
+    var ALL_IMPARK = [];
+    var typeMap = {매출:'일반매출', 반품불가:'반품불가', 향정:'향정'};
+    for (var tp in rowSets) {
+      var 구분 = typeMap[tp];
+      var groups = {};
+      rowSets[tp].forEach(function(row) {
+        var key = (row['매출처명']||'') + '|' + (row['코드']||'') + '|' + (row['상품명']||'') + '|' + (row['규격']||'') + '|' + (row['유효기한']||'') + '|' + (row['일련번호']||'');
         if (!groups[key]) {
           groups[key] = {
-            담당자: row['담당자']||'',
-            매출처명: row['매출처명']||'',
-            코드: row['코드']||'',
-            상품명: row['상품명']||'',
-            규격: row['규격']||'',
-            유효기한: row['유효기한']||'',
-            일련번호: row['일련번호']||'',
+            담당자: row['담당자'] || '',
+            매출처명: row['매출처명'] || '',
+            코드: row['코드'] || '',
+            상품명: row['상품명'] || '',
+            규격: row['규격'] || '',
+            유효기한: row['유효기한'] || '',
+            일련번호: row['일련번호'] || '',
             수량: 0,
-            구분
+            구분: 구분
           };
         }
-        groups[key].수량 += parseFloat(row['수량']||0);
-      }
-      for (const item of Object.values(groups)) {
-        if (item.수량 <= 0) continue;
-        const expDate = parseExp(item.유효기한);
-        if (!expDate || expDate > cutoff) continue;
-        const diffDays = Math.floor((expDate-today)/(86400000));
+        groups[key].수량 += parseFloat(row['수량'] || 0);
+      });
+      Object.values(groups).forEach(function(item) {
+        if (item.수량 <= 0) return;
+        var expDate = parseExp(item.유효기한);
+        if (!expDate || expDate > cutoff) return;
+        var diffDays = Math.floor((expDate - today) / 86400000);
+        var formatted = expDate.getFullYear() + '-' + String(expDate.getMonth()+1).padStart(2,'0') + '-' + String(expDate.getDate()).padStart(2,'0');
         ALL_IMPARK.push({
           담당자: item.담당자,
           매출처명: item.매출처명,
+          코드: item.코드,
           상품명: item.상품명,
           규격: item.규격,
+          유효기한_표시: formatted,
           일련번호: item.일련번호,
-          유효기한_표시: expDate.toISOString().slice(0,10),
+          수량: item.수량,
           잔여일수: diffDays,
-          수량: Math.round(item.수량),
           구분: item.구분
         });
-      }
+      });
     }
-    ALL_IMPARK.sort((a,b)=>a.잔여일수-b.잔여일수||a.매출처명.localeCompare(b.매출처명));
+    ALL_IMPARK.sort(function(a,b){ return a.잔여일수 - b.잔여일수 || a.매출처명.localeCompare(b.매출처명); });
 
-    // ── RECALL_DB 생성 (담당자 포함) ──
-    const allRows = [];
-    for (const rows of Object.values(rowSets)) {
-      for (const row of rows) allRows.push(row);
-    }
-    const recallGroups = {};
-    for (const row of allRows) {
-      const key = (row['코드']||'')+'|'+(row['상품명']||'')+'|'+(row['규격']||'')+'|'+(row['매출처명']||'')+'|'+(row['전표일자']||'')+'|'+(row['제조번호']||'')+'|'+(row['일련번호']||'')+'|'+(row['유효기한']||'');
+    var allRows = [];
+    Object.values(rowSets).forEach(function(rs){ rs.forEach(function(r){ allRows.push(r); }); });
+    var recallGroups = {};
+    allRows.forEach(function(row) {
+      var key = (row['코드']||'') + '|' + (row['상품명']||'') + '|' + (row['규격']||'') + '|' + (row['매출처명']||'') + '|' + (row['일련번호']||'');
       if (!recallGroups[key]) {
         recallGroups[key] = {
-          담당자: row['담당자']||'',
-          코드: row['코드']||'',
-          상품명: row['상품명']||'',
-          규격: row['규격']||'',
-          매출처명: row['매출처명']||'',
-          전표일자_표시: fmtDate8(row['전표일자']||''),
-          제조번호: row['제조번호']||'',
-          일련번호: row['일련번호']||'',
-          유효기한: row['유효기한']||'',
+          담당자: row['담당자'] || '',
+          코드: row['코드'] || '',
+          상품명: row['상품명'] || '',
+          규격: row['규격'] || '',
+          매출처명: row['매출처명'] || '',
+          전표일자_표시: fmtDate8(row['전표일자'] || ''),
+          제조번호: row['제조번호'] || '',
+          일련번호: row['일련번호'] || '',
+          유효기한: row['유효기한'] || '',
           수량: 0
         };
       }
-      recallGroups[key].수량 += parseFloat(row['수량']||0);
-    }
-    const ALL_RECALL_DB = Object.values(recallGroups).filter(r=>r.수량>0);
+      recallGroups[key].수량 += parseFloat(row['수량'] || 0);
+    });
+    var ALL_RECALL_DB = Object.values(recallGroups).filter(function(r){ return r.수량 > 0; });
 
-    window._ALL_IMPARK = ALL_IMPARK;
+    var persons = [...new Set(ALL_IMPARK.map(function(r){ return r.담당자; }).filter(function(n){ return n; }))].sort();
+    var recallPersons = [...new Set(ALL_RECALL_DB.map(function(r){ return r.담당자; }).filter(function(n){ return n; }))];
+    var allPersons = [...new Set([...persons, ...recallPersons])].sort();
+
+    window._ALL_IMPARK    = ALL_IMPARK;
     window._ALL_RECALL_DB = ALL_RECALL_DB;
+    window._ALL_PERSONS   = allPersons;
+    window._FRESH_UPLOAD  = true;
 
-    // ── 담당자 목록 추출 ──
-    const persons = [...new Set(ALL_IMPARK.map(r=>r.담당자).filter(n=>n))].sort();
-    // RECALL_DB에서도 추가
-    const recallPersons = [...new Set(ALL_RECALL_DB.map(r=>r.담당자).filter(n=>n))];
-    const allPersons = [...new Set([...persons, ...recallPersons])].sort();
-    window._ALL_PERSONS = allPersons;
+    document.getElementById('progressMsg').style.display = 'none';
+    document.getElementById('btnAnalyze').disabled = false;
 
-    document.getElementById('uploadSection').style.display='none';
-    document.getElementById('progressMsg').style.display='none';
-
+    // 이름 선택 or 바로 대시보드
     if (allPersons.length === 1) {
-      // 담당자 1명이면 바로 대시보드
       selectPerson(allPersons[0]);
+      // 저장 버튼 표시는 name selection에만 있으므로 별도 처리
     } else if (allPersons.length === 0) {
-      // 담당자 정보 없으면 전체 표시
       selectPerson('');
     } else {
-      // 이름 선택 화면 표시
       showNameSelection();
     }
 
   } catch(e) {
-    alert('파일 분석 중 오류가 발생했습니다.\n'+e.message);
+    alert('파일 분석 중 오류가 발생했습니다.\n' + e.message);
     document.getElementById('btnAnalyze').disabled = false;
     document.getElementById('progressMsg').style.display = 'none';
   }
@@ -436,396 +527,359 @@ async function doAnalysis() {
 
 // ── 이름 선택 화면 ──
 function showNameSelection() {
-  const persons = window._ALL_PERSONS;
-  const nameList = document.getElementById('nameList');
-
-  nameList.innerHTML = persons.map(name => {
-    const cnt = window._ALL_IMPARK.filter(r=>r.담당자===name).length;
-    return '<button class="name-btn" onclick="selectPerson(\'' + name.replace(/'/g,"\\'") + '\')">'
+  var persons = window._ALL_PERSONS;
+  var nameList = document.getElementById('nameList');
+  nameList.innerHTML = persons.map(function(name) {
+    var cnt = window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }).length;
+    return '<button class="name-btn" onclick="selectPerson(\'' + name.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">'
       + '👤 ' + name
       + '<span class="name-cnt">유통기한 임박 ' + cnt + '건</span>'
       + '</button>';
   }).join('');
 
-  document.getElementById('nameSection').style.display='flex';
-  document.getElementById('dashboardSection').style.display='none';
+  // 방금 업로드한 경우 저장 버튼 표시
+  var btnSave = document.getElementById('btnSaveGithub');
+  btnSave.style.display = window._FRESH_UPLOAD ? 'block' : 'none';
+
+  showOnly('nameSection');
+}
+
+function backToNames() {
+  document.getElementById('dashboardSection').style.display = 'none';
+  showNameSelection();
 }
 
 // ── 담당자 선택 ──
 function selectPerson(name) {
   window._CURRENT_PERSON = name;
+  window._IMPARK    = name ? window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }) : window._ALL_IMPARK;
+  window._RECALL_DB = name ? window._ALL_RECALL_DB.filter(function(r){ return r.담당자 === name; }) : window._ALL_RECALL_DB;
 
-  if (name) {
-    window._IMPARK = window._ALL_IMPARK.filter(r=>r.담당자===name);
-    window._RECALL_DB = window._ALL_RECALL_DB.filter(r=>r.담당자===name);
-  } else {
-    window._IMPARK = window._ALL_IMPARK;
-    window._RECALL_DB = window._ALL_RECALL_DB;
-  }
-
-  // 카운트
-  const IMPARK = window._IMPARK;
-  const cnt = {전체:IMPARK.length, 반품불가:0, 향정:0, 일반매출:0};
-  for (const r of IMPARK) cnt[r.구분] = (cnt[r.구분]||0)+1;
-  document.getElementById('cnt_전체').textContent = cnt.전체;
+  var IMPARK = window._IMPARK;
+  var cnt = {전체:IMPARK.length, 반품불가:0, 향정:0, 일반매출:0};
+  IMPARK.forEach(function(r){ cnt[r.구분] = (cnt[r.구분] || 0) + 1; });
+  document.getElementById('cnt_전체').textContent    = cnt.전체;
   document.getElementById('cnt_반품불가').textContent = cnt.반품불가;
-  document.getElementById('cnt_향정').textContent = cnt.향정;
-  document.getElementById('cnt_일반매출').textContent = cnt.일반매출;
+  document.getElementById('cnt_향정').textContent    = cnt.향정;
+  document.getElementById('cnt_일반매출').textContent  = cnt.일반매출;
 
-  // 거래처 드롭다운
-  const pharmacies = [...new Set(IMPARK.map(r=>r.매출처명))].sort();
-  const sel = document.getElementById('pharmacyFilter');
+  var pharmacies = [...new Set(IMPARK.map(function(r){ return r.매출처명; }))].sort();
+  var sel = document.getElementById('pharmacyFilter');
   sel.innerHTML = '<option value="">전체 거래처</option>';
-  pharmacies.forEach(p=>{ const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o); });
+  pharmacies.forEach(function(p) {
+    var o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    sel.appendChild(o);
+  });
 
-  // 헤더
-  const today2 = new Date();
-  document.getElementById('headerInfo').textContent =
-    (name ? name + ' | ' : '') + '분석일: ' + today2.toLocaleDateString('ko-KR');
-
-  // 담당자 변경 버튼: 여러 명일 때만 표시
-  document.getElementById('btnChangePerson').style.display =
-    window._ALL_PERSONS.length > 1 ? 'inline-block' : 'none';
+  document.getElementById('headerInfo').textContent = (name ? name + ' | ' : '') + '분석일: ' + new Date().toLocaleDateString('ko-KR');
+  document.getElementById('btnChangePerson').style.display = window._ALL_PERSONS.length > 1 ? 'inline-block' : 'none';
 
   currentFilter = '전체';
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
   document.getElementById('btn_전체').classList.add('active');
-
-  document.getElementById('nameSection').style.display='none';
-  document.getElementById('dashboardSection').style.display='block';
-  document.getElementById('searchInput').value='';
+  document.getElementById('searchInput').value = '';
   clearRecall();
   clearPrice();
   renderTable();
+
+  showOnly('dashboardSection');
 }
 
-function backToNames() {
-  document.getElementById('dashboardSection').style.display='none';
-  showNameSelection();
+// ── GitHub 저장 ──
+async function saveToGitHub() {
+  var token = localStorage.getItem('gh_token');
+  if (!token) {
+    document.getElementById('tokenModal').classList.add('open');
+    return;
+  }
+  await doSaveToGitHub(token);
 }
 
-function backToUpload() {
-  document.getElementById('nameSection').style.display='none';
-  document.getElementById('uploadSection').style.display='flex';
-  document.getElementById('btnAnalyze').disabled = false;
+async function doSaveToGitHub(token) {
+  var btn = document.getElementById('btnSaveGithub');
+  btn.textContent = '저장 중...';
+  btn.disabled = true;
+
+  var today = new Date().toISOString().slice(0,10);
+  var data = {
+    updated: today,
+    persons: window._ALL_PERSONS,
+    impark:  window._ALL_IMPARK,
+    recall:  window._ALL_RECALL_DB
+  };
+
+  try {
+    // 현재 파일 SHA 가져오기 (업데이트 시 필요)
+    var sha = null;
+    try {
+      var getResp = await fetch(GH_API, {
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (getResp.ok) {
+        var fileInfo = await getResp.json();
+        sha = fileInfo.sha;
+      }
+    } catch(e) {}
+
+    // JSON → Base64
+    var jsonStr = JSON.stringify(data);
+    var encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+
+    var body = {
+      message: '데이터 업데이트 ' + today,
+      content: encoded
+    };
+    if (sha) body.sha = sha;
+
+    var putResp = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (putResp.ok) {
+      window._FRESH_UPLOAD = false;
+      btn.textContent = '✅ 저장 완료!';
+      btn.style.background = '#1a3a5c';
+      document.getElementById('nameUpdated').textContent = '최근 업데이트: ' + today;
+      alert('✅ 저장 완료!\n\n팀원들이 ' + window.location.href + ' 에 접속하면 바로 확인할 수 있습니다.');
+    } else {
+      var err = await putResp.json().catch(function(){ return {}; });
+      var msg = err.message || putResp.status;
+      if (putResp.status === 401) {
+        alert('❌ 토큰이 잘못되었습니다.\n다시 확인해주세요.');
+        localStorage.removeItem('gh_token');
+      } else {
+        alert('❌ 저장 실패: ' + msg);
+      }
+      btn.textContent = '☁️ GitHub에 저장 (팀원 공유)';
+      btn.disabled = false;
+      btn.style.background = '';
+    }
+  } catch(e) {
+    alert('❌ 오류가 발생했습니다: ' + e.message);
+    btn.textContent = '☁️ GitHub에 저장 (팀원 공유)';
+    btn.disabled = false;
+  }
+}
+
+function saveToken() {
+  var t = document.getElementById('tokenInput').value.trim();
+  if (!t) { alert('토큰을 입력하세요.'); return; }
+  localStorage.setItem('gh_token', t);
+  closeTokenModal();
+  doSaveToGitHub(t);
+}
+
+function closeTokenModal() {
+  document.getElementById('tokenModal').classList.remove('open');
 }
 
 // ── 대시보드 함수 ──
-let currentFilter = '전체';
+var currentFilter = '전체';
 
-function setFilter(f,btn) {
-  currentFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   renderTable();
 }
 
-function itemKey(r){return r['매출처명']+'|'+r['상품명']+'|'+r['규격']+'|'+r['유효기한_표시'];}
-function loadDeleted(){
-  const key = 'del_impark' + (window._CURRENT_PERSON ? '_'+window._CURRENT_PERSON : '');
-  try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'));}catch{return new Set();}
-}
-function saveDeleted(set){
-  const key = 'del_impark' + (window._CURRENT_PERSON ? '_'+window._CURRENT_PERSON : '');
-  localStorage.setItem(key,JSON.stringify([...set]));
-}
-function deleteItem(key){const del=loadDeleted();del.add(key);saveDeleted(del);renderTable();}
+function itemKey(r) { return r['매출처명'] + '|' + r['상품명'] + '|' + r['규격'] + '|' + r['유효기한_표시']; }
 
-function restoreAll(){
-  const del=loadDeleted();
-  if(del.size===0)return;
-  const IMPARK=window._IMPARK||[];
-  const list=document.getElementById('modalList');
-  const hiddenItems=IMPARK.filter(r=>del.has(itemKey(r)));
-  const inImpark=new Set(hiddenItems.map(r=>itemKey(r)));
-  const extraKeys=[...del].filter(k=>!inImpark.has(k));
-  list.innerHTML=[...hiddenItems.map(r=>{
-    const k=itemKey(r).replace(/"/g,'&quot;');
-    const bc=r.구분==='반품불가'?'background:#ffebee;color:#c62828':r.구분==='향정'?'background:#fff8e1;color:#f57f17':'background:#e8f5e9;color:#2e7d32';
-    return '<div class="modal-item">'
-      +'<input type="checkbox" class="restore-chk" data-key="'+k+'" id="chk_'+encodeURIComponent(k)+'">'
-      +'<label for="chk_'+encodeURIComponent(k)+'"><strong>'+r.매출처명+'</strong> · '+r.상품명+' '+r.규격+'<br>'
-      +'<span style="font-size:.76rem;color:#aaa">'+r.유효기한_표시+' | 잔여 '+r.잔여일수+'일 | 수량 '+r.수량+'</span></label>'
-      +'<span class="mi-badge" style="'+bc+'">'+r.구분+'</span></div>';
-  }),
-  ...extraKeys.map(k=>{
-    const ek=k.replace(/"/g,'&quot;');
-    const parts=k.split('|');
-    return '<div class="modal-item">'
-      +'<input type="checkbox" class="restore-chk" data-key="'+ek+'" id="chk_'+encodeURIComponent(ek)+'">'
-      +'<label for="chk_'+encodeURIComponent(ek)+'"><span style="color:#aaa">'+parts[0]+' · '+parts[1]+' '+parts[2]+'</span><br>'
-      +'<span style="font-size:.76rem;color:#ccc">(현재 데이터에 없는 항목)</span></label></div>';
-  })].join('');
+function loadDeleted() {
+  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch(e) { return new Set(); }
+}
+function saveDeleted(set) {
+  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
+  localStorage.setItem(key, JSON.stringify([...set]));
+}
+function deleteItem(key) { var del = loadDeleted(); del.add(key); saveDeleted(del); renderTable(); }
+
+function restoreAll() {
+  var del = loadDeleted();
+  if (del.size === 0) return;
+  var IMPARK = window._IMPARK || [];
+  var list = document.getElementById('modalList');
+  var hiddenItems = IMPARK.filter(function(r){ return del.has(itemKey(r)); });
+  var inImpark = new Set(hiddenItems.map(function(r){ return itemKey(r); }));
+  var extraKeys = [...del].filter(function(k){ return !inImpark.has(k); });
+
+  list.innerHTML = [
+    ...hiddenItems.map(function(r) {
+      var k = itemKey(r).replace(/"/g, '&quot;');
+      var bc = r.구분 === '반품불가' ? 'background:#ffebee;color:#c62828' : r.구분 === '향정' ? 'background:#fff8e1;color:#f57f17' : 'background:#e8f5e9;color:#2e7d32';
+      return '<div class="modal-item">'
+        + '<input type="checkbox" class="restore-chk" data-key="' + k + '" id="chk_' + encodeURIComponent(k) + '">'
+        + '<label for="chk_' + encodeURIComponent(k) + '"><strong>' + r.매출처명 + '</strong> · ' + r.상품명 + ' ' + r.규격 + '<br>'
+        + '<span style="font-size:.76rem;color:#aaa">' + r.유효기한_표시 + ' | 잔여 ' + r.잔여일수 + '일 | 수량 ' + r.수량 + '</span></label>'
+        + '<span class="mi-badge" style="' + bc + '">' + r.구분 + '</span></div>';
+    }),
+    ...extraKeys.map(function(k) {
+      var ek = k.replace(/"/g, '&quot;');
+      var parts = k.split('|');
+      return '<div class="modal-item">'
+        + '<input type="checkbox" class="restore-chk" data-key="' + ek + '" id="chk_' + encodeURIComponent(ek) + '">'
+        + '<label for="chk_' + encodeURIComponent(ek) + '"><span style="color:#aaa">' + parts[0] + ' · ' + parts[1] + ' ' + parts[2] + '</span><br>'
+        + '<span style="font-size:.76rem;color:#ccc">(현재 데이터에 없는 항목)</span></label></div>';
+    })
+  ].join('');
   document.getElementById('restoreModal').classList.add('open');
 }
 
-function closeModal(){document.getElementById('restoreModal').classList.remove('open');}
-function toggleSelectAll(){
-  const chks=document.querySelectorAll('.restore-chk');
-  const allChecked=[...chks].every(c=>c.checked);
-  chks.forEach(c=>c.checked=!allChecked);
+function closeModal() { document.getElementById('restoreModal').classList.remove('open'); }
+function toggleSelectAll() {
+  var chks = document.querySelectorAll('.restore-chk');
+  var allChecked = [...chks].every(function(c){ return c.checked; });
+  chks.forEach(function(c){ c.checked = !allChecked; });
 }
-function restoreSelected(){
-  const del=loadDeleted();
-  document.querySelectorAll('.restore-chk:checked').forEach(c=>del.delete(c.dataset.key));
-  saveDeleted(del);closeModal();renderTable();
+function restoreSelected() {
+  var del = loadDeleted();
+  document.querySelectorAll('.restore-chk:checked').forEach(function(c){ del.delete(c.dataset.key); });
+  saveDeleted(del); closeModal(); renderTable();
 }
-function restoreAllConfirm(){
-  const key='del_impark'+(window._CURRENT_PERSON?'_'+window._CURRENT_PERSON:'');
-  localStorage.removeItem(key);closeModal();renderTable();
+function restoreAllConfirm() {
+  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
+  localStorage.removeItem(key); closeModal(); renderTable();
 }
-document.addEventListener('click',function(e){
-  const modal=document.getElementById('restoreModal');
-  if(modal&&e.target===modal)closeModal();
+document.addEventListener('click', function(e) {
+  var modal = document.getElementById('restoreModal');
+  if (modal && e.target === modal) closeModal();
+  var tModal = document.getElementById('tokenModal');
+  if (tModal && e.target === tModal) closeTokenModal();
 });
 
 function renderTable() {
-  const IMPARK = window._IMPARK||[];
-  const del=loadDeleted();
-  const pharmacy=document.getElementById('pharmacyFilter').value;
-  const search=document.getElementById('searchInput').value.toLowerCase();
-  const rows=IMPARK.filter(r=>{
-    if(del.has(itemKey(r)))return false;
-    if(currentFilter!=='전체'&&r['구분']!==currentFilter)return false;
-    if(pharmacy&&r['매출처명']!==pharmacy)return false;
-    if(search&&!r['상품명'].toLowerCase().includes(search))return false;
+  var IMPARK = window._IMPARK || [];
+  var del = loadDeleted();
+  var pharmacy = document.getElementById('pharmacyFilter').value;
+  var search = document.getElementById('searchInput').value.toLowerCase();
+  var rows = IMPARK.filter(function(r) {
+    if (del.has(itemKey(r))) return false;
+    if (currentFilter !== '전체' && r['구분'] !== currentFilter) return false;
+    if (pharmacy && r['매출처명'] !== pharmacy) return false;
+    if (search && !r['상품명'].toLowerCase().includes(search)) return false;
     return true;
   });
-  const hiddenCount=IMPARK.filter(r=>del.has(itemKey(r))).length;
-  document.getElementById('countLabel').textContent=rows.length+'건 표시 중';
-  const hi=document.getElementById('hiddenInfo');
-  const rb=document.getElementById('btnRestore');
-  if(hiddenCount>0){hi.textContent='('+hiddenCount+'건 숨김)';rb.style.display='inline-block';}
-  else{hi.textContent='';rb.style.display='none';}
-  document.getElementById('tableBody').innerHTML=rows.map(r=>{
-    const d=r['잔여일수'];
-    const dc=d<=60?'days-urgent':d<=120?'days-warn':'days-ok';
-    const k=itemKey(r).replace(/'/g,"\\'");
+  var hiddenCount = IMPARK.filter(function(r){ return del.has(itemKey(r)); }).length;
+  document.getElementById('countLabel').textContent = rows.length + '건 표시 중';
+  var hi = document.getElementById('hiddenInfo');
+  var rb = document.getElementById('btnRestore');
+  if (hiddenCount > 0) { hi.textContent = '(' + hiddenCount + '건 숨김)'; rb.style.display = 'inline-block'; }
+  else { hi.textContent = ''; rb.style.display = 'none'; }
+  document.getElementById('tableBody').innerHTML = rows.map(function(r) {
+    var d = r['잔여일수'];
+    var dc = d <= 60 ? 'days-urgent' : d <= 120 ? 'days-warn' : 'days-ok';
+    var k = itemKey(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return '<tr>'
-      +'<td><span class="badge '+r['구분']+'">'+r['구분']+'</span></td>'
-      +'<td>'+r['매출처명']+'</td>'
-      +'<td>'+r['상품명']+'</td>'
-      +'<td>'+r['규격']+'</td>'
-      +'<td>'+r['일련번호']+'</td>'
-      +'<td>'+r['유효기한_표시']+'</td>'
-      +'<td><span class="days-chip '+dc+'">'+d+'일</span></td>'
-      +'<td>'+r['수량']+'</td>'
-      +'<td><button class="btn-del" onclick="deleteItem(\''+k+'\')">✓ 확인</button></td>'
-      +'</tr>';
+      + '<td><span class="badge ' + r['구분'] + '">' + r['구분'] + '</span></td>'
+      + '<td>' + r['매출처명'] + '</td>'
+      + '<td>' + r['상품명'] + '</td>'
+      + '<td>' + r['규격'] + '</td>'
+      + '<td>' + r['일련번호'] + '</td>'
+      + '<td>' + r['유효기한_표시'] + '</td>'
+      + '<td><span class="days-chip ' + dc + '">' + d + '일</span></td>'
+      + '<td>' + r['수량'] + '</td>'
+      + '<td><button class="btn-del" onclick="deleteItem(\'' + k + '\')">✓ 확인</button></td>'
+      + '</tr>';
   }).join('');
 }
 
 function buildQueries(raw) {
-  const tokens=raw.split(/[,\s]+/).map(q=>q.trim()).filter(q=>q.length>0);
-  let prefix='';const queries=[];
-  for(const t of tokens){
-    if(t.length>=6){prefix=t.substring(0,3);queries.push(t);}
-    else if(prefix){queries.push(prefix+t.padStart(3,'0'));}
-    else{queries.push(t);}
-  }
+  var tokens = raw.split(/[,\s]+/).map(function(q){ return q.trim(); }).filter(function(q){ return q.length > 0; });
+  var prefix = ''; var queries = [];
+  tokens.forEach(function(t) {
+    if (t.length >= 6) { prefix = t.substring(0,3); queries.push(t); }
+    else if (prefix) { queries.push(prefix + t.padStart(3,'0')); }
+    else { queries.push(t); }
+  });
   return queries;
 }
 
 function doRecallSearch() {
-  const RECALL_DB=window._RECALL_DB||[];
-  const type=document.getElementById('searchType').value;
-  const raw=document.getElementById('recallInput').value.trim();
-  if(!raw){alert('코드 또는 품목명을 입력하세요.');return;}
-  const queries=buildQueries(raw);
-  const results=RECALL_DB.filter(r=>{
-    if(type==='code') return queries.some(q=>r['코드']===q);
-    else return queries.some(q=>r['상품명'].toLowerCase().includes(q.toLowerCase()));
+  var RECALL_DB = window._RECALL_DB || [];
+  var type = document.getElementById('searchType').value;
+  var raw = document.getElementById('recallInput').value.trim();
+  if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
+  var queries = buildQueries(raw);
+  var results = RECALL_DB.filter(function(r) {
+    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
+    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
   });
-  const resultEl=document.getElementById('recallResult');
-  const summaryEl=document.getElementById('recallSummary');
-  const tbody=document.getElementById('recallTableBody');
-  if(results.length===0){
-    resultEl.style.display='block';
-    summaryEl.innerHTML='"'+raw+'" — 조회된 거래처 없음';
-    tbody.innerHTML='<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
+  var resultEl = document.getElementById('recallResult');
+  var summaryEl = document.getElementById('recallSummary');
+  var tbody = document.getElementById('recallTableBody');
+  if (results.length === 0) {
+    resultEl.style.display = 'block';
+    summaryEl.innerHTML = '"' + raw + '" — 조회된 거래처 없음';
+    tbody.innerHTML = '<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
     return;
   }
-  const 거래처목록=[...new Set(results.map(r=>r['매출처명']))];
-  const 총수량=results.reduce((s,r)=>s+r['수량'],0);
-  const 품목명목록=[...new Set(results.map(r=>r['상품명']))].join(', ');
-  summaryEl.innerHTML='📌 <strong>'+품목명목록+'</strong> — <strong>'+거래처목록.length+'개 거래처</strong>에서 총 <strong>'+총수량+'개</strong> 보유 중';
-  results.sort((a,b)=>a['매출처명'].localeCompare(b['매출처명'])||a['상품명'].localeCompare(b['상품명']));
-  tbody.innerHTML=results.map(r=>'<tr>'
-    +'<td>'+r['매출처명']+'</td><td>'+(r['전표일자_표시']||'-')+'</td>'
-    +'<td>'+r['상품명']+'</td><td>'+r['규격']+'</td>'
-    +'<td>'+(r['제조번호']||'-')+'</td><td>'+(r['일련번호']||'-')+'</td>'
-    +'<td>'+(r['유효기한']||'-')+'</td>'
-    +'<td><span class="qty-badge">'+r['수량']+'</span></td></tr>').join('');
-  resultEl.style.display='block';
+  var 거래처목록 = [...new Set(results.map(function(r){ return r['매출처명']; }))];
+  var 총수량 = results.reduce(function(s,r){ return s + r['수량']; }, 0);
+  var 품목명목록 = [...new Set(results.map(function(r){ return r['상품명']; }))].join(', ');
+  summaryEl.innerHTML = '📌 <strong>' + 품목명목록 + '</strong> — <strong>' + 거래처목록.length + '개 거래처</strong>에서 총 <strong>' + 총수량 + '개</strong> 보유 중';
+  results.sort(function(a,b){ return a['매출처명'].localeCompare(b['매출처명']) || a['상품명'].localeCompare(b['상품명']); });
+  tbody.innerHTML = results.map(function(r) {
+    return '<tr><td>' + r['매출처명'] + '</td><td>' + (r['전표일자_표시']||'-') + '</td>'
+      + '<td>' + r['상품명'] + '</td><td>' + r['규격'] + '</td>'
+      + '<td>' + (r['제조번호']||'-') + '</td><td>' + (r['일련번호']||'-') + '</td>'
+      + '<td>' + (r['유효기한']||'-') + '</td>'
+      + '<td><span class="qty-badge">' + r['수량'] + '</span></td></tr>';
+  }).join('');
+  resultEl.style.display = 'block';
 }
-
-function clearRecall(){
-  document.getElementById('recallInput').value='';
-  document.getElementById('recallResult').style.display='none';
+function clearRecall() {
+  document.getElementById('recallInput').value = '';
+  document.getElementById('recallResult').style.display = 'none';
 }
 
 function doPriceSearch() {
-  const RECALL_DB=window._RECALL_DB||[];
-  const type=document.getElementById('priceSearchType').value;
-  const raw=document.getElementById('priceInput').value.trim();
-  if(!raw){alert('코드 또는 품목명을 입력하세요.');return;}
-  const queries=buildQueries(raw);
-  const results=RECALL_DB.filter(r=>{
-    if(type==='code') return queries.some(q=>r['코드']===q);
-    else return queries.some(q=>r['상품명'].toLowerCase().includes(q.toLowerCase()));
+  var RECALL_DB = window._RECALL_DB || [];
+  var type = document.getElementById('priceSearchType').value;
+  var raw = document.getElementById('priceInput').value.trim();
+  if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
+  var queries = buildQueries(raw);
+  var results = RECALL_DB.filter(function(r) {
+    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
+    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
   });
-  const resultEl=document.getElementById('priceResult');
-  const summaryEl=document.getElementById('priceSummary');
-  const tbody=document.getElementById('priceTableBody');
-  if(results.length===0){
-    resultEl.style.display='block';
-    summaryEl.innerHTML='"'+raw+'" — 조회된 거래처 없음';
-    tbody.innerHTML='<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
+  var resultEl = document.getElementById('priceResult');
+  var summaryEl = document.getElementById('priceSummary');
+  var tbody = document.getElementById('priceTableBody');
+  if (results.length === 0) {
+    resultEl.style.display = 'block';
+    summaryEl.innerHTML = '"' + raw + '" — 조회된 거래처 없음';
+    tbody.innerHTML = '<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
     return;
   }
-  const 거래처목록=[...new Set(results.map(r=>r['매출처명']))];
-  const 총수량=results.reduce((s,r)=>s+r['수량'],0);
-  const 품목명목록=[...new Set(results.map(r=>r['상품명']))].join(', ');
-  summaryEl.innerHTML='💊 <strong>'+품목명목록+'</strong> — <strong>'+거래처목록.length+'개 거래처</strong>에서 총 <strong>'+총수량+'개</strong> 보유 중';
-  results.sort((a,b)=>a['매출처명'].localeCompare(b['매출처명'])||a['상품명'].localeCompare(b['상품명']));
-  tbody.innerHTML=results.map(r=>'<tr>'
-    +'<td>'+r['매출처명']+'</td><td>'+(r['전표일자_표시']||'-')+'</td>'
-    +'<td>'+r['상품명']+'</td><td>'+r['규격']+'</td>'
-    +'<td>'+(r['제조번호']||'-')+'</td><td>'+(r['일련번호']||'-')+'</td>'
-    +'<td>'+(r['유효기한']||'-')+'</td>'
-    +'<td><span class="qty-badge">'+r['수량']+'</span></td></tr>').join('');
-  resultEl.style.display='block';
+  var 거래처목록 = [...new Set(results.map(function(r){ return r['매출처명']; }))];
+  var 총수량 = results.reduce(function(s,r){ return s + r['수량']; }, 0);
+  var 품목명목록 = [...new Set(results.map(function(r){ return r['상품명']; }))].join(', ');
+  summaryEl.innerHTML = '💊 <strong>' + 품목명목록 + '</strong> — <strong>' + 거래처목록.length + '개 거래처</strong>에서 총 <strong>' + 총수량 + '개</strong> 보유 중';
+  results.sort(function(a,b){ return a['매출처명'].localeCompare(b['매출처명']) || a['상품명'].localeCompare(b['상품명']); });
+  tbody.innerHTML = results.map(function(r) {
+    return '<tr><td>' + r['매출처명'] + '</td><td>' + (r['전표일자_표시']||'-') + '</td>'
+      + '<td>' + r['상품명'] + '</td><td>' + r['규격'] + '</td>'
+      + '<td>' + (r['제조번호']||'-') + '</td><td>' + (r['일련번호']||'-') + '</td>'
+      + '<td>' + (r['유효기한']||'-') + '</td>'
+      + '<td><span class="qty-badge">' + r['수량'] + '</span></td></tr>';
+  }).join('');
+  resultEl.style.display = 'block';
 }
-
-function clearPrice(){
-  document.getElementById('priceInput').value='';
-  document.getElementById('priceResult').style.display='none';
-}
-
-// ── 📱 모바일용 저장 (전체 담당자 데이터 + 이름 선택 포함) ──
-function saveMobile() {
-  const ALL_IMPARK = window._ALL_IMPARK || [];
-  const ALL_RECALL_DB = window._ALL_RECALL_DB || [];
-  const ALL_PERSONS = window._ALL_PERSONS || [];
-  const today = new Date().toISOString().slice(0,10);
-  const css = document.querySelector('style').textContent;
-
-  const personLabel = ALL_PERSONS.length > 0 ? ALL_PERSONS.join('_') : '전체';
-
-  // 이름 선택 버튼 HTML 생성 코드 (생성된 파일 안에서 실행될 JS)
-  const initCode = ALL_PERSONS.length > 1
-    ? 'showNameSelection();'
-    : (ALL_PERSONS.length === 1 ? 'selectPerson(' + JSON.stringify(ALL_PERSONS[0]) + ');' : 'selectPerson("");');
-
-  const fullHtml =
-    '<!DOCTYPE html>\n<html lang="ko">\n<head>\n' +
-    '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
-    '<title>유통기한 관리 대시보드</title>\n' +
-    '<style>' + css + '</style>\n</head>\n<body>\n' +
-
-    // 이름 선택 화면
-    '<div id="nameSection" style="display:none">' +
-    '<div class="name-card">' +
-    '<h2>👤 담당자를 선택하세요</h2>' +
-    '<p class="name-sub">본인 이름을 클릭하면 데이터를 확인할 수 있습니다.</p>' +
-    '<div class="name-list" id="nameList"></div>' +
-    '</div></div>\n' +
-
-    // 대시보드 화면
-    '<div id="dashboardSection" style="display:none">' +
-    '<header><h1>📊 유통기한 임박 &amp; 회수의약품 대시보드</h1>' +
-    '<div class="header-right">' +
-    '<span id="headerInfo"></span>' +
-    '<button class="btn-change" onclick="backToNames()" id="btnChangePerson">👤 담당자 변경</button>' +
-    '</div></header>' +
-    '<div class="container">' +
-    '<div class="table-section" style="margin-bottom:22px">' +
-    '<div class="section-title">📋 유통기한 7개월 이내 품목 현황</div>' +
-    '<div class="filters">' +
-    '<button class="filter-btn all active" id="btn_전체" onclick="setFilter(\'전체\',this)">전체 (<span id="cnt_전체">0</span>)</button>' +
-    '<button class="filter-btn red" id="btn_반품불가" onclick="setFilter(\'반품불가\',this)">🔴 반품불가 (<span id="cnt_반품불가">0</span>)</button>' +
-    '<button class="filter-btn yellow" id="btn_향정" onclick="setFilter(\'향정\',this)">🟡 향정 (<span id="cnt_향정">0</span>)</button>' +
-    '<button class="filter-btn green" id="btn_일반매출" onclick="setFilter(\'일반매출\',this)">🟢 일반매출 (<span id="cnt_일반매출">0</span>)</button>' +
-    '<select id="pharmacyFilter" onchange="renderTable()"><option value="">전체 거래처</option></select>' +
-    '<input type="text" id="searchInput" placeholder="품목명 검색..." oninput="renderTable()">' +
-    '<span class="count-label" id="countLabel"></span>' +
-    '<span class="hidden-info" id="hiddenInfo"></span>' +
-    '<button class="btn-restore" id="btnRestore" onclick="restoreAll()">🔄 삭제 복원</button>' +
-    '</div>' +
-    '<div class="table-wrap"><table><thead><tr><th>구분</th><th>거래처명</th><th>상품명</th><th>규격</th><th>일련번호</th><th>유효기한</th><th>잔여일수</th><th>수량</th><th>처리</th></tr></thead>' +
-    '<tbody id="tableBody"></tbody></table></div></div>' +
-    '<div class="recall-box"><h2>🔍 회수의약품 거래처 조회</h2>' +
-    '<div class="desc">복지부 회수 명령 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>' +
-    '<div class="recall-input-row">' +
-    '<select id="searchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>' +
-    '<input type="text" id="recallInput" placeholder="예: 049594 458 600" onkeydown="if(event.key===\'Enter\')doRecallSearch()">' +
-    '<button class="btn-search" onclick="doRecallSearch()">조회</button>' +
-    '<button class="btn-clear" onclick="clearRecall()">초기화</button></div>' +
-    '<div class="recall-result" id="recallResult"><div class="recall-summary" id="recallSummary"></div>' +
-    '<div class="recall-table-wrap"><table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>' +
-    '<tbody id="recallTableBody"></tbody></table></div></div></div>' +
-    '<div class="recall-box" style="margin-top:22px"><h2>💊 약가인하 품목 거래처 조회</h2>' +
-    '<div class="desc">약가인하 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>' +
-    '<div class="recall-input-row">' +
-    '<select id="priceSearchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>' +
-    '<input type="text" id="priceInput" placeholder="예: 049594 458 600" onkeydown="if(event.key===\'Enter\')doPriceSearch()">' +
-    '<button class="btn-search" onclick="doPriceSearch()">조회</button>' +
-    '<button class="btn-clear" onclick="clearPrice()">초기화</button></div>' +
-    '<div class="recall-result" id="priceResult"><div class="recall-summary" id="priceSummary"></div>' +
-    '<div class="recall-table-wrap"><table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>' +
-    '<tbody id="priceTableBody"></tbody></table></div></div></div>' +
-    '</div></div>\n' +
-
-    // 복원 모달
-    '<div class="modal-overlay" id="restoreModal"><div class="modal-box">' +
-    '<h3>🔄 숨긴 항목 복원</h3><p class="modal-sub">복원할 항목을 선택하거나 전체 복원하세요.</p>' +
-    '<div class="modal-list" id="modalList"></div>' +
-    '<div class="modal-footer"><span class="modal-selall" onclick="toggleSelectAll()">전체 선택</span>' +
-    '<button class="btn-modal-cancel" onclick="closeModal()">닫기</button>' +
-    '<button class="btn-modal-sel" onclick="restoreSelected()">선택 복원</button>' +
-    '<button class="btn-modal-all" onclick="restoreAllConfirm()">전체 복원</button>' +
-    '</div></div></div>\n' +
-
-    '<script>\n' +
-    'const _ALL_IMPARK=' + JSON.stringify(ALL_IMPARK) + ';\n' +
-    'const _ALL_RECALL_DB=' + JSON.stringify(ALL_RECALL_DB) + ';\n' +
-    'const _ALL_PERSONS=' + JSON.stringify(ALL_PERSONS) + ';\n' +
-    'window._ALL_IMPARK=_ALL_IMPARK;window._ALL_RECALL_DB=_ALL_RECALL_DB;window._ALL_PERSONS=_ALL_PERSONS;\n' +
-    'window._IMPARK=[];window._RECALL_DB=[];window._CURRENT_PERSON="";\n' +
-    'let currentFilter="전체";\n' +
-    'function showNameSelection(){const persons=window._ALL_PERSONS;const nameList=document.getElementById("nameList");nameList.innerHTML=persons.map(name=>{const cnt=window._ALL_IMPARK.filter(r=>r.담당자===name).length;return\'<button class="name-btn" onclick="selectPerson(\\\'\'+name+\'\\\')">\'+\'👤 \'+name+\'<span class="name-cnt">유통기한 임박 \'+cnt+\'건</span></button>\';}).join("");document.getElementById("nameSection").style.display="flex";document.getElementById("dashboardSection").style.display="none";}\n' +
-    'function selectPerson(name){window._CURRENT_PERSON=name;window._IMPARK=name?window._ALL_IMPARK.filter(r=>r.담당자===name):window._ALL_IMPARK;window._RECALL_DB=name?window._ALL_RECALL_DB.filter(r=>r.담당자===name):window._ALL_RECALL_DB;const IMPARK=window._IMPARK;const cnt={전체:IMPARK.length,반품불가:0,향정:0,일반매출:0};for(const r of IMPARK)cnt[r.구분]=(cnt[r.구분]||0)+1;document.getElementById("cnt_전체").textContent=cnt.전체;document.getElementById("cnt_반품불가").textContent=cnt.반품불가;document.getElementById("cnt_향정").textContent=cnt.향정;document.getElementById("cnt_일반매출").textContent=cnt.일반매출;const pharmacies=[...new Set(IMPARK.map(r=>r.매출처명))].sort();const sel=document.getElementById("pharmacyFilter");sel.innerHTML=\'<option value="">전체 거래처</option>\';pharmacies.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;sel.appendChild(o);});document.getElementById("headerInfo").textContent=(name?name+" | ":"")+"분석일: "+new Date().toLocaleDateString("ko-KR");document.getElementById("btnChangePerson").style.display=window._ALL_PERSONS.length>1?"inline-block":"none";currentFilter="전체";document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));document.getElementById("btn_전체").classList.add("active");document.getElementById("nameSection").style.display="none";document.getElementById("dashboardSection").style.display="block";document.getElementById("searchInput").value="";clearRecall();clearPrice();renderTable();}\n' +
-    'function backToNames(){document.getElementById("dashboardSection").style.display="none";showNameSelection();}\n' +
-    'function setFilter(f,btn){currentFilter=f;document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderTable();}\n' +
-    'function itemKey(r){return r["매출처명"]+"|"+r["상품명"]+"|"+r["규격"]+"|"+r["유효기한_표시"];}\n' +
-    'function loadDeleted(){const k="del_impark"+(window._CURRENT_PERSON?"_"+window._CURRENT_PERSON:"");try{return new Set(JSON.parse(localStorage.getItem(k)||"[]"));}catch{return new Set();}}\n' +
-    'function saveDeleted(set){const k="del_impark"+(window._CURRENT_PERSON?"_"+window._CURRENT_PERSON:"");localStorage.setItem(k,JSON.stringify([...set]));}\n' +
-    'function deleteItem(key){const del=loadDeleted();del.add(key);saveDeleted(del);renderTable();}\n' +
-    'function restoreAll(){const del=loadDeleted();if(del.size===0)return;const IMPARK=window._IMPARK||[];const list=document.getElementById("modalList");const hiddenItems=IMPARK.filter(r=>del.has(itemKey(r)));const inImpark=new Set(hiddenItems.map(r=>itemKey(r)));const extraKeys=[...del].filter(k=>!inImpark.has(k));list.innerHTML=[...hiddenItems.map(r=>{const k=itemKey(r).replace(/"/g,"&quot;");const bc=r.구분==="반품불가"?"background:#ffebee;color:#c62828":r.구분==="향정"?"background:#fff8e1;color:#f57f17":"background:#e8f5e9;color:#2e7d32";return\'<div class="modal-item"><input type="checkbox" class="restore-chk" data-key="\'+k+\'" id="chk_\'+encodeURIComponent(k)+\'"><label for="chk_\'+encodeURIComponent(k)+\'"><strong>\'+r.매출처명+\'</strong> · \'+r.상품명+\' \'+r.규격+\'<br><span style="font-size:.76rem;color:#aaa">\'+r.유효기한_표시+\' | 잔여 \'+r.잔여일수+\'일 | 수량 \'+r.수량+\'</span></label><span class="mi-badge" style="\'+bc+\'">\'+r.구분+\'</span></div>\';}),\n' +
-    '...extraKeys.map(k=>{const ek=k.replace(/"/g,"&quot;");const parts=k.split("|");return\'<div class="modal-item"><input type="checkbox" class="restore-chk" data-key="\'+ek+\'" id="chk_\'+encodeURIComponent(ek)+\'"><label for="chk_\'+encodeURIComponent(ek)+\'"><span style="color:#aaa">\'+parts[0]+\' · \'+parts[1]+\' \'+parts[2]+\'</span><br><span style="font-size:.76rem;color:#ccc">(현재 데이터에 없는 항목)</span></label></div>\';})].join("");document.getElementById("restoreModal").classList.add("open");}\n' +
-    'function closeModal(){document.getElementById("restoreModal").classList.remove("open");}\n' +
-    'function toggleSelectAll(){const chks=document.querySelectorAll(".restore-chk");const allChecked=[...chks].every(c=>c.checked);chks.forEach(c=>c.checked=!allChecked);}\n' +
-    'function restoreSelected(){const del=loadDeleted();document.querySelectorAll(".restore-chk:checked").forEach(c=>del.delete(c.dataset.key));saveDeleted(del);closeModal();renderTable();}\n' +
-    'function restoreAllConfirm(){const k="del_impark"+(window._CURRENT_PERSON?"_"+window._CURRENT_PERSON:"");localStorage.removeItem(k);closeModal();renderTable();}\n' +
-    'document.addEventListener("click",function(e){const modal=document.getElementById("restoreModal");if(modal&&e.target===modal)closeModal();});\n' +
-    'function renderTable(){const IMPARK=window._IMPARK||[];const del=loadDeleted();const pharmacy=document.getElementById("pharmacyFilter").value;const search=document.getElementById("searchInput").value.toLowerCase();const rows=IMPARK.filter(r=>{if(del.has(itemKey(r)))return false;if(currentFilter!=="전체"&&r["구분"]!==currentFilter)return false;if(pharmacy&&r["매출처명"]!==pharmacy)return false;if(search&&!r["상품명"].toLowerCase().includes(search))return false;return true;});const hiddenCount=IMPARK.filter(r=>del.has(itemKey(r))).length;document.getElementById("countLabel").textContent=rows.length+"건 표시 중";const hi=document.getElementById("hiddenInfo");const rb=document.getElementById("btnRestore");if(hiddenCount>0){hi.textContent="("+hiddenCount+"건 숨김)";rb.style.display="inline-block";}else{hi.textContent="";rb.style.display="none";}document.getElementById("tableBody").innerHTML=rows.map(r=>{const d=r["잔여일수"];const dc=d<=60?"days-urgent":d<=120?"days-warn":"days-ok";const k=itemKey(r).replace(/\'/g,"\\\\\'");return"<tr><td><span class=\\"badge "+r["구분"]+"\\">"+ r["구분"]+"</span></td><td>"+r["매출처명"]+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+r["일련번호"]+"</td><td>"+r["유효기한_표시"]+"</td><td><span class=\\"days-chip "+dc+"\\">"+d+"일</span></td><td>"+r["수량"]+"</td><td><button class=\\"btn-del\\" onclick=\\"deleteItem(\'"+k+"\')\\"">✓ 확인</button></td></tr>";}).join("");}\n' +
-    'function buildQueries(raw){const tokens=raw.split(/[,\\s]+/).map(q=>q.trim()).filter(q=>q.length>0);let prefix="";const queries=[];for(const t of tokens){if(t.length>=6){prefix=t.substring(0,3);queries.push(t);}else if(prefix){queries.push(prefix+t.padStart(3,"0"));}else{queries.push(t);}}return queries;}\n' +
-    'function doRecallSearch(){const RECALL_DB=window._RECALL_DB||[];const type=document.getElementById("searchType").value;const raw=document.getElementById("recallInput").value.trim();if(!raw){alert("코드 또는 품목명을 입력하세요.");return;}const queries=buildQueries(raw);const results=RECALL_DB.filter(r=>{if(type==="code")return queries.some(q=>r["코드"]===q);else return queries.some(q=>r["상품명"].toLowerCase().includes(q.toLowerCase()));});const resultEl=document.getElementById("recallResult");const summaryEl=document.getElementById("recallSummary");const tbody=document.getElementById("recallTableBody");if(results.length===0){resultEl.style.display="block";summaryEl.innerHTML=\'"\'+raw+\'" — 조회된 거래처 없음\';tbody.innerHTML=\'<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>\';return;}const 거래처목록=[...new Set(results.map(r=>r["매출처명"]))];const 총수량=results.reduce((s,r)=>s+r["수량"],0);const 품목명목록=[...new Set(results.map(r=>r["상품명"]))].join(", ");summaryEl.innerHTML="📌 <strong>"+품목명목록+"</strong> — <strong>"+거래처목록.length+"개 거래처</strong>에서 총 <strong>"+총수량+"개</strong> 보유 중";results.sort((a,b)=>a["매출처명"].localeCompare(b["매출처명"])||a["상품명"].localeCompare(b["상품명"]));tbody.innerHTML=results.map(r=>"<tr><td>"+r["매출처명"]+"</td><td>"+(r["전표일자_표시"]||"-")+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+(r["제조번호"]||"-")+"</td><td>"+(r["일련번호"]||"-")+"</td><td>"+(r["유효기한"]||"-")+"</td><td><span class=\\"qty-badge\\">"+r["수량"]+"</span></td></tr>").join("");resultEl.style.display="block";}\n' +
-    'function clearRecall(){document.getElementById("recallInput").value="";document.getElementById("recallResult").style.display="none";}\n' +
-    'function doPriceSearch(){const RECALL_DB=window._RECALL_DB||[];const type=document.getElementById("priceSearchType").value;const raw=document.getElementById("priceInput").value.trim();if(!raw){alert("코드 또는 품목명을 입력하세요.");return;}const queries=buildQueries(raw);const results=RECALL_DB.filter(r=>{if(type==="code")return queries.some(q=>r["코드"]===q);else return queries.some(q=>r["상품명"].toLowerCase().includes(q.toLowerCase()));});const resultEl=document.getElementById("priceResult");const summaryEl=document.getElementById("priceSummary");const tbody=document.getElementById("priceTableBody");if(results.length===0){resultEl.style.display="block";summaryEl.innerHTML=\'"\'+raw+\'" — 조회된 거래처 없음\';tbody.innerHTML=\'<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>\';return;}const 거래처목록=[...new Set(results.map(r=>r["매출처명"]))];const 총수량=results.reduce((s,r)=>s+r["수량"],0);const 품목명목록=[...new Set(results.map(r=>r["상품명"]))].join(", ");summaryEl.innerHTML="💊 <strong>"+품목명목록+"</strong> — <strong>"+거래처목록.length+"개 거래처</strong>에서 총 <strong>"+총수량+"개</strong> 보유 중";results.sort((a,b)=>a["매출처명"].localeCompare(b["매출처명"])||a["상품명"].localeCompare(b["상품명"]));tbody.innerHTML=results.map(r=>"<tr><td>"+r["매출처명"]+"</td><td>"+(r["전표일자_표시"]||"-")+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+(r["제조번호"]||"-")+"</td><td>"+(r["일련번호"]||"-")+"</td><td>"+(r["유효기한"]||"-")+"</td><td><span class=\\"qty-badge\\">"+r["수량"]+"</span></td></tr>").join("");resultEl.style.display="block";}\n' +
-    'function clearPrice(){document.getElementById("priceInput").value="";document.getElementById("priceResult").style.display="none";}\n' +
-    initCode + '\n' +
-    '<\/script>\n</body>\n</html>';
-
-  const blob = new Blob([fullHtml], {type:'text/html;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '유통기한_대시보드_' + today + '.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+function clearPrice() {
+  document.getElementById('priceInput').value = '';
+  document.getElementById('priceResult').style.display = 'none';
 }
 </script>
 </body>
-</html
+</html>
