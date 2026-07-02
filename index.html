@@ -145,7 +145,10 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
 <div id="dashboardSection" style="display:none">
   <header>
     <h1>📊 유통기한 임박 &amp; 회수의약품 대시보드</h1>
-    <span id="headerInfo"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="headerInfo"></span>
+      <button onclick="saveMobile()" style="padding:8px 18px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:700;white-space:nowrap">📱 모바일용 저장</button>
+    </div>
   </header>
   <div class="container">
     <div class="table-section" style="margin-bottom:22px">
@@ -638,6 +641,117 @@ function doPriceSearch() {
 function clearPrice(){
   document.getElementById('priceInput').value='';
   document.getElementById('priceResult').style.display='none';
+}
+
+// ── 📱 모바일용 HTML 저장 ──
+function saveMobile() {
+  const IMPARK = window._IMPARK || [];
+  const RECALL_DB = window._RECALL_DB || [];
+  const headerText = document.getElementById('headerInfo').textContent;
+  const personName = headerText.split('|')[0].trim();
+  const css = document.querySelector('style').textContent;
+  const today = new Date().toISOString().slice(0,10);
+
+  const dashHTML =
+    '<div id="dashboardSection">' +
+    '<header>' +
+    '<h1>📊 유통기한 임박 &amp; 회수의약품 대시보드</h1>' +
+    '<span id="headerInfo">' + headerText + '</span>' +
+    '</header>' +
+    '<div class="container">' +
+    '<div class="table-section" style="margin-bottom:22px">' +
+    '<div class="section-title">📋 유통기한 7개월 이내 품목 현황</div>' +
+    '<div class="filters">' +
+    '<button class="filter-btn all active" id="btn_전체" onclick="setFilter(\'전체\',this)">전체 (<span id="cnt_전체">0</span>)</button>' +
+    '<button class="filter-btn red" id="btn_반품불가" onclick="setFilter(\'반품불가\',this)">🔴 반품불가 (<span id="cnt_반품불가">0</span>)</button>' +
+    '<button class="filter-btn yellow" id="btn_향정" onclick="setFilter(\'향정\',this)">🟡 향정 (<span id="cnt_향정">0</span>)</button>' +
+    '<button class="filter-btn green" id="btn_일반매출" onclick="setFilter(\'일반매출\',this)">🟢 일반매출 (<span id="cnt_일반매출">0</span>)</button>' +
+    '<select id="pharmacyFilter" onchange="renderTable()"><option value="">전체 거래처</option></select>' +
+    '<input type="text" id="searchInput" placeholder="품목명 검색..." oninput="renderTable()">' +
+    '<span class="count-label" id="countLabel"></span>' +
+    '<span class="hidden-info" id="hiddenInfo"></span>' +
+    '<button class="btn-restore" id="btnRestore" onclick="restoreAll()">🔄 삭제 복원</button>' +
+    '</div>' +
+    '<div class="table-wrap"><table>' +
+    '<thead><tr><th>구분</th><th>거래처명</th><th>상품명</th><th>규격</th><th>일련번호</th><th>유효기한</th><th>잔여일수</th><th>수량</th><th>처리</th></tr></thead>' +
+    '<tbody id="tableBody"></tbody></table></div></div>' +
+    '<div class="recall-box">' +
+    '<h2>🔍 회수의약품 거래처 조회</h2>' +
+    '<div class="desc">복지부 회수 명령 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>' +
+    '<div class="recall-input-row">' +
+    '<select id="searchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>' +
+    '<input type="text" id="recallInput" placeholder="예: 049594 458 600" onkeydown="if(event.key===\'Enter\')doRecallSearch()">' +
+    '<button class="btn-search" onclick="doRecallSearch()">조회</button>' +
+    '<button class="btn-clear" onclick="clearRecall()">초기화</button></div>' +
+    '<div class="recall-result" id="recallResult"><div class="recall-summary" id="recallSummary"></div>' +
+    '<div class="recall-table-wrap"><table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>' +
+    '<tbody id="recallTableBody"></tbody></table></div></div></div>' +
+    '<div class="recall-box" style="margin-top:22px">' +
+    '<h2>💊 약가인하 품목 거래처 조회</h2>' +
+    '<div class="desc">약가인하 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>' +
+    '<div class="recall-input-row">' +
+    '<select id="priceSearchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>' +
+    '<input type="text" id="priceInput" placeholder="예: 049594 458 600" onkeydown="if(event.key===\'Enter\')doPriceSearch()">' +
+    '<button class="btn-search" onclick="doPriceSearch()">조회</button>' +
+    '<button class="btn-clear" onclick="clearPrice()">초기화</button></div>' +
+    '<div class="recall-result" id="priceResult"><div class="recall-summary" id="priceSummary"></div>' +
+    '<div class="recall-table-wrap"><table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>' +
+    '<tbody id="priceTableBody"></tbody></table></div></div></div>' +
+    '</div></div>' +
+    '<div class="modal-overlay" id="restoreModal"><div class="modal-box">' +
+    '<h3>🔄 숨긴 항목 복원</h3><p class="modal-sub">복원할 항목을 선택하거나 전체 복원하세요.</p>' +
+    '<div class="modal-list" id="modalList"></div>' +
+    '<div class="modal-footer">' +
+    '<span class="modal-selall" onclick="toggleSelectAll()">전체 선택</span>' +
+    '<button class="btn-modal-cancel" onclick="closeModal()">닫기</button>' +
+    '<button class="btn-modal-sel" onclick="restoreSelected()">선택 복원</button>' +
+    '<button class="btn-modal-all" onclick="restoreAllConfirm()">전체 복원</button>' +
+    '</div></div></div>';
+
+  const jsCode =
+    'const IMPARK=' + JSON.stringify(IMPARK) + ';\n' +
+    'const RECALL_DB=' + JSON.stringify(RECALL_DB) + ';\n' +
+    'window._IMPARK=IMPARK;window._RECALL_DB=RECALL_DB;\n' +
+    'let currentFilter="전체";\n' +
+    'function setFilter(f,btn){currentFilter=f;document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderTable();}\n' +
+    'function itemKey(r){return r["매출처명"]+"|"+r["상품명"]+"|"+r["규격"]+"|"+r["유효기한_표시"];}\n' +
+    'function loadDeleted(){try{return new Set(JSON.parse(localStorage.getItem("del_impark")||"[]"));}catch{return new Set();}}\n' +
+    'function saveDeleted(set){localStorage.setItem("del_impark",JSON.stringify([...set]));}\n' +
+    'function deleteItem(key){const del=loadDeleted();del.add(key);saveDeleted(del);renderTable();}\n' +
+    'function restoreAll(){const del=loadDeleted();if(del.size===0)return;const list=document.getElementById("modalList");const hiddenItems=IMPARK.filter(r=>del.has(itemKey(r)));const inImpark=new Set(hiddenItems.map(r=>itemKey(r)));const extraKeys=[...del].filter(k=>!inImpark.has(k));list.innerHTML=[...hiddenItems.map(r=>{const k=itemKey(r).replace(/"/g,"&quot;");const bc=r.구분==="반품불가"?"background:#ffebee;color:#c62828":r.구분==="향정"?"background:#fff8e1;color:#f57f17":"background:#e8f5e9;color:#2e7d32";return\'<div class="modal-item"><input type="checkbox" class="restore-chk" data-key="\'+k+\'" id="chk_\'+encodeURIComponent(k)+\'"><label for="chk_\'+encodeURIComponent(k)+\'"><strong>\'+r.매출처명+\'</strong> · \'+r.상품명+\' \'+r.규격+\'<br><span style="font-size:.76rem;color:#aaa">\'+r.유효기한_표시+\' | 잔여 \'+r.잔여일수+\'일 | 수량 \'+r.수량+\'</span></label><span class="mi-badge" style="\'+bc+\'">\'+r.구분+\'</span></div>\';}),\n' +
+    '...extraKeys.map(k=>{const ek=k.replace(/"/g,"&quot;");const parts=k.split("|");return\'<div class="modal-item"><input type="checkbox" class="restore-chk" data-key="\'+ek+\'" id="chk_\'+encodeURIComponent(ek)+\'"><label for="chk_\'+encodeURIComponent(ek)+\'"><span style="color:#aaa">\'+parts[0]+\' · \'+parts[1]+\' \'+parts[2]+\'</span><br><span style="font-size:.76rem;color:#ccc">(현재 데이터에 없는 항목)</span></label></div>\';})].join("");document.getElementById("restoreModal").classList.add("open");}\n' +
+    'function closeModal(){document.getElementById("restoreModal").classList.remove("open");}\n' +
+    'function toggleSelectAll(){const chks=document.querySelectorAll(".restore-chk");const allChecked=[...chks].every(c=>c.checked);chks.forEach(c=>c.checked=!allChecked);}\n' +
+    'function restoreSelected(){const del=loadDeleted();document.querySelectorAll(".restore-chk:checked").forEach(c=>del.delete(c.dataset.key));saveDeleted(del);closeModal();renderTable();}\n' +
+    'function restoreAllConfirm(){localStorage.removeItem("del_impark");closeModal();renderTable();}\n' +
+    'document.addEventListener("click",function(e){const modal=document.getElementById("restoreModal");if(modal&&e.target===modal)closeModal();});\n' +
+    'function renderTable(){const del=loadDeleted();const pharmacy=document.getElementById("pharmacyFilter").value;const search=document.getElementById("searchInput").value.toLowerCase();const rows=IMPARK.filter(r=>{if(del.has(itemKey(r)))return false;if(currentFilter!=="전체"&&r["구분"]!==currentFilter)return false;if(pharmacy&&r["매출처명"]!==pharmacy)return false;if(search&&!r["상품명"].toLowerCase().includes(search))return false;return true;});const hiddenCount=IMPARK.filter(r=>del.has(itemKey(r))).length;document.getElementById("countLabel").textContent=rows.length+"건 표시 중";const hi=document.getElementById("hiddenInfo");const rb=document.getElementById("btnRestore");if(hiddenCount>0){hi.textContent="("+hiddenCount+"건 숨김)";rb.style.display="inline-block";}else{hi.textContent="";rb.style.display="none";}document.getElementById("tableBody").innerHTML=rows.map(r=>{const d=r["잔여일수"];const dc=d<=60?"days-urgent":d<=120?"days-warn":"days-ok";const k=itemKey(r).replace(/\'/g,"\\\'");return"<tr><td><span class=\\"badge "+r["구분"]+"\\">"+ r["구분"]+"</span></td><td>"+r["매출처명"]+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+r["일련번호"]+"</td><td>"+r["유효기한_표시"]+"</td><td><span class=\\"days-chip "+dc+"\\">"+d+"일</span></td><td>"+r["수량"]+"</td><td><button class=\\"btn-del\\" onclick=\\"deleteItem(\'"+k+"\')\\"">✓ 확인</button></td></tr>";}).join("");}\n' +
+    'function buildQueries(raw){const tokens=raw.split(/[,\\s]+/).map(q=>q.trim()).filter(q=>q.length>0);let prefix="";const queries=[];for(const t of tokens){if(t.length>=6){prefix=t.substring(0,3);queries.push(t);}else if(prefix){queries.push(prefix+t.padStart(3,"0"));}else{queries.push(t);}}return queries;}\n' +
+    'function doRecallSearch(){const type=document.getElementById("searchType").value;const raw=document.getElementById("recallInput").value.trim();if(!raw){alert("코드 또는 품목명을 입력하세요.");return;}const queries=buildQueries(raw);const results=RECALL_DB.filter(r=>{if(type==="code")return queries.some(q=>r["코드"]===q);else return queries.some(q=>r["상품명"].toLowerCase().includes(q.toLowerCase()));});const resultEl=document.getElementById("recallResult");const summaryEl=document.getElementById("recallSummary");const tbody=document.getElementById("recallTableBody");if(results.length===0){resultEl.style.display="block";summaryEl.innerHTML=\'"\'+ raw +\'" — 조회된 거래처 없음\';tbody.innerHTML=\'<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>\';return;}const 거래처목록=[...new Set(results.map(r=>r["매출처명"]))];const 총수량=results.reduce((s,r)=>s+r["수량"],0);const 품목명목록=[...new Set(results.map(r=>r["상품명"]))].join(", ");summaryEl.innerHTML="📌 <strong>"+품목명목록+"</strong> — <strong>"+거래처목록.length+"개 거래처</strong>에서 총 <strong>"+총수량+"개</strong> 보유 중";results.sort((a,b)=>a["매출처명"].localeCompare(b["매출처명"])||a["상품명"].localeCompare(b["상품명"]));tbody.innerHTML=results.map(r=>"<tr><td>"+r["매출처명"]+"</td><td>"+(r["전표일자_표시"]||"-")+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+(r["제조번호"]||"-")+"</td><td>"+(r["일련번호"]||"-")+"</td><td>"+(r["유효기한"]||"-")+"</td><td><span class=\\"qty-badge\\">"+r["수량"]+"</span></td></tr>").join("");resultEl.style.display="block";}\n' +
+    'function clearRecall(){document.getElementById("recallInput").value="";document.getElementById("recallResult").style.display="none";}\n' +
+    'function doPriceSearch(){const type=document.getElementById("priceSearchType").value;const raw=document.getElementById("priceInput").value.trim();if(!raw){alert("코드 또는 품목명을 입력하세요.");return;}const queries=buildQueries(raw);const results=RECALL_DB.filter(r=>{if(type==="code")return queries.some(q=>r["코드"]===q);else return queries.some(q=>r["상품명"].toLowerCase().includes(q.toLowerCase()));});const resultEl=document.getElementById("priceResult");const summaryEl=document.getElementById("priceSummary");const tbody=document.getElementById("priceTableBody");if(results.length===0){resultEl.style.display="block";summaryEl.innerHTML=\'"\'+ raw +\'" — 조회된 거래처 없음\';tbody.innerHTML=\'<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>\';return;}const 거래처목록=[...new Set(results.map(r=>r["매출처명"]))];const 총수량=results.reduce((s,r)=>s+r["수량"],0);const 품목명목록=[...new Set(results.map(r=>r["상품명"]))].join(", ");summaryEl.innerHTML="💊 <strong>"+품목명목록+"</strong> — <strong>"+거래처목록.length+"개 거래처</strong>에서 총 <strong>"+총수량+"개</strong> 보유 중";results.sort((a,b)=>a["매출처명"].localeCompare(b["매출처명"])||a["상품명"].localeCompare(b["상품명"]));tbody.innerHTML=results.map(r=>"<tr><td>"+r["매출처명"]+"</td><td>"+(r["전표일자_표시"]||"-")+"</td><td>"+r["상품명"]+"</td><td>"+r["규격"]+"</td><td>"+(r["제조번호"]||"-")+"</td><td>"+(r["일련번호"]||"-")+"</td><td>"+(r["유효기한"]||"-")+"</td><td><span class=\\"qty-badge\\">"+r["수량"]+"</span></td></tr>").join("");resultEl.style.display="block";}\n' +
+    'function clearPrice(){document.getElementById("priceInput").value="";document.getElementById("priceResult").style.display="none";}\n' +
+    '(function init(){const cnt={전체:IMPARK.length,반품불가:0,향정:0,일반매출:0};for(const r of IMPARK)cnt[r.구분]=(cnt[r.구분]||0)+1;document.getElementById("cnt_전체").textContent=cnt.전체;document.getElementById("cnt_반품불가").textContent=cnt.반품불가;document.getElementById("cnt_향정").textContent=cnt.향정;document.getElementById("cnt_일반매출").textContent=cnt.일반매출;const pharmacies=[...new Set(IMPARK.map(r=>r.매출처명))].sort();const sel=document.getElementById("pharmacyFilter");pharmacies.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;sel.appendChild(o);});renderTable();})();';
+
+  const fullHtml =
+    '<!DOCTYPE html>\n<html lang="ko">\n<head>\n' +
+    '<meta charset="UTF-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '<title>' + (personName ? personName + ' - ' : '') + '유통기한 관리 대시보드</title>\n' +
+    '<style>' + css + '</style>\n' +
+    '</head>\n<body>\n' +
+    dashHTML + '\n' +
+    '<script>\n' + jsCode + '\n<\/script>\n' +
+    '</body>\n</html>';
+
+  const blob = new Blob([fullHtml], {type: 'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (personName || '대시보드') + '_' + today + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 </script>
 </body>
