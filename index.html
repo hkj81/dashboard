@@ -150,9 +150,9 @@ tbody td{padding:9px 12px;border-bottom:1px solid #eee}
     <p class="subtitle">출고현황조회 파일을 업로드하고 분석 후 팀원들과 공유하세요.</p>
     <div style="margin-bottom:20px;position:relative">
       <label style="font-size:.85rem;font-weight:700;color:#555;display:block;margin-bottom:6px">👤 내 이름 (담당자명)</label>
-      <input type="text" id="myName" placeholder="클릭하면 저장된 이름이 표시됩니다" autocomplete="off"
+      <input type="text" id="myName" placeholder="클릭하면 저장된 이름이 표시됩니다" autocomplete="new-password"
         style="width:100%;padding:10px 14px;border:2px solid #ccd6e0;border-radius:10px;font-size:.95rem;outline:none;font-family:inherit;cursor:pointer"
-        onfocus="showNameDropdown()" oninput="showNameDropdown()">
+        onfocus="showNameDropdown(false)" oninput="showNameDropdown(true)">
       <div id="nameDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:2px solid #1a3a5c;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;margin-top:2px;overflow:hidden"></div>
       <div style="font-size:.75rem;color:#aaa;margin-top:4px">기존 팀원 데이터는 유지되고 내 데이터만 업데이트됩니다.</div>
     </div>
@@ -366,15 +366,17 @@ function goToUpload() {
   if (wrap) wrap.style.display = (window._ALL_PERSONS && window._ALL_PERSONS.length > 0) ? 'block' : 'none';
 }
 
-function showNameDropdown() {
+function showNameDropdown(filterMode) {
   var input = document.getElementById('myName');
   var dropdown = document.getElementById('nameDropdown');
   var persons = window._ALL_PERSONS || [];
-  var query = input.value.trim();
-  var filtered = persons.filter(function(n){ return !query || n.indexOf(query) !== -1; });
+  if (persons.length === 0) { dropdown.style.display = 'none'; return; }
+  var filtered = filterMode
+    ? persons.filter(function(n){ var q = input.value.trim(); return !q || n.indexOf(q) !== -1; })
+    : persons; // 포커스 시 항상 전체 표시
   if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
   dropdown.innerHTML = filtered.map(function(n) {
-    return '<div onclick="selectMyName(\'' + n + '\')" style="padding:11px 16px;cursor:pointer;font-size:.95rem;font-weight:600;color:#1a3a5c;border-bottom:1px solid #f0f0f0" onmouseover="this.style.background=\'#f0f5ff\'" onmouseout="this.style.background=\'\'">👤 ' + n + '</div>';
+    return '<div onmousedown="selectMyName(\'' + n + '\')" style="padding:12px 16px;cursor:pointer;font-size:.95rem;font-weight:600;color:#1a3a5c;border-bottom:1px solid #f0f0f0" onmouseover="this.style.background=\'#f0f5ff\'" onmouseout="this.style.background=\'\'">👤 ' + n + '</div>';
   }).join('');
   dropdown.style.display = 'block';
 }
