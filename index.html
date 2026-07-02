@@ -323,21 +323,22 @@ window.addEventListener('DOMContentLoaded', initApp);
 async function initApp() {
   showOnly('loadingSection');
   try {
-    const resp = await fetch(GH_RAW + '?t=' + Date.now());
-    if (resp.ok) {
-      const data = await resp.json();
+    // GitHub API로 읽기 (CDN 캐시 없이 항상 최신 데이터)
+    var apiResp = await fetch(GH_API, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (apiResp.ok) {
+      var fileInfo = await apiResp.json();
+      var jsonStr = decodeURIComponent(escape(atob(fileInfo.content.replace(/\n/g, ''))));
+      var data = JSON.parse(jsonStr);
       if (data && data.impark && data.impark.length > 0) {
         window._ALL_IMPARK    = data.impark  || [];
         window._ALL_RECALL_DB = data.recall  || [];
         window._ALL_PERSONS   = data.persons || [];
-        const updated = data.updated || '';
+        var updated = data.updated || '';
         document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
         window._FRESH_UPLOAD = false;
-        if (window._ALL_PERSONS.length === 1) {
-          selectPerson(window._ALL_PERSONS[0]);
-        } else {
-          showNameSelection();
-        }
+        showNameSelection();
         return;
       }
     }
