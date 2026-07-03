@@ -342,10 +342,19 @@ async function initApp() {
         showNameSelection();
         return;
       }
+      // 데이터 파일은 있는데 비어있는 경우
+      if (data && data.persons) {
+        window._ALL_PERSONS = data.persons || [];
+      }
     }
-  } catch(e) {}
+  } catch(e) {
+    console.error('GitHub 데이터 로드 실패:', e);
+  }
   // 데이터 없으면 업로드 화면
   showOnly('uploadSection');
+  // 업로드 화면에서도 뒤로가기 버튼 표시 여부 결정
+  var wrap = document.getElementById('btnBackWrap');
+  if (wrap) wrap.style.display = 'none';
 }
 
 // ── 화면 전환 ──
