@@ -323,33 +323,52 @@ window._FRESH_UPLOAD   = false; // 방금 업로드한 경우
 // ── 초기화: 페이지 로드 시 GitHub에서 데이터 가져오기 ──
 window.addEventListener('DOMContentLoaded', initApp);
 
+function b64decode(b64) {
+  var latin1 = atob(b64.replace(/\n/g, ''));
+  var bytes = new Uint8Array(latin1.length);
+  for (var i = 0; i < latin1.length; i++) bytes[i] = latin1.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
 async function initApp() {
   showOnly('loadingSection');
+  var data = null;
+
+  // 1차: GitHub API (CDN 캐시 없음, 항상 최신)
   try {
-    var resp = await fetch(GH_RAW + '?v=' + Date.now());
-    if (resp.ok) {
-      var data = await resp.json();
-      if (data && data.impark && data.impark.length > 0) {
-        window._ALL_IMPARK    = data.impark  || [];
-        window._ALL_RECALL_DB = data.recall  || [];
-        window._ALL_PERSONS   = data.persons || [];
-        var updated = data.updated || '';
-        document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
-        window._FRESH_UPLOAD = false;
-        showNameSelection();
-        return;
-      }
-      // 데이터 파일은 있는데 비어있는 경우
-      if (data && data.persons) {
-        window._ALL_PERSONS = data.persons || [];
+    var token = localStorage.getItem('gh_token') || '';
+    var headers = { 'Accept': 'application/vnd.github.v3+json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var apiResp = await fetch(GH_API, { headers: headers });
+    if (apiResp.ok) {
+      var fileInfo = await apiResp.json();
+      if (fileInfo.content) {
+        data = JSON.parse(b64decode(fileInfo.content));
       }
     }
-  } catch(e) {
-    console.error('GitHub 데이터 로드 실패:', e);
+  } catch(e) {}
+
+  // 2차: raw URL (API 실패 시 폴백)
+  if (!data) {
+    try {
+      var rawResp = await fetch(GH_RAW + '?v=' + Date.now());
+      if (rawResp.ok) data = await rawResp.json();
+    } catch(e) {}
   }
+
+  if (data && data.impark && data.impark.length > 0) {
+    window._ALL_IMPARK    = data.impark  || [];
+    window._ALL_RECALL_DB = data.recall  || [];
+    window._ALL_PERSONS   = data.persons || [];
+    var updated = data.updated || '';
+    document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
+    window._FRESH_UPLOAD = false;
+    showNameSelection();
+    return;
+  }
+
   // 데이터 없으면 업로드 화면
   showOnly('uploadSection');
-  // 업로드 화면에서도 뒤로가기 버튼 표시 여부 결정
   var wrap = document.getElementById('btnBackWrap');
   if (wrap) wrap.style.display = 'none';
 }
