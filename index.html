@@ -343,7 +343,12 @@ async function initApp() {
     if (apiResp.ok) {
       var fileInfo = await apiResp.json();
       if (fileInfo.content) {
+        // 일반 파일 (1MB 이하)
         data = JSON.parse(b64decode(fileInfo.content));
+      } else if (fileInfo.download_url) {
+        // 대용량 파일: download_url로 직접 가져오기
+        var dlResp = await fetch(fileInfo.download_url + '?v=' + Date.now());
+        if (dlResp.ok) data = await dlResp.json();
       }
     }
   } catch(e) {}
