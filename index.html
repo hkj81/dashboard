@@ -326,10 +326,7 @@ window.addEventListener('DOMContentLoaded', initApp);
 async function initApp() {
   showOnly('loadingSection');
   try {
-    var resp = await fetch(GH_RAW + '?nocache=' + Date.now(), {
-      cache: 'no-store',
-      headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
-    });
+    var resp = await fetch(GH_RAW + '?v=' + Date.now());
     if (resp.ok) {
       var data = await resp.json();
       if (data && data.impark && data.impark.length > 0) {
