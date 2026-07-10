@@ -337,14 +337,16 @@ function b64decode(b64) {
 async function initApp() {
   showOnly('loadingSection');
 
+  var allImpark = [], allRecall = [], persons = [], latestUpdated = '';
+
   // ── 1차: 새 포맷 (persons.json + 개인별 파일) ──
   try {
     var pResp = await fetch(GH_PERSONS_RAW + '?v=' + Date.now());
     if (pResp.ok) {
       var personsData = await pResp.json();
-      var persons = personsData.persons || [];
+      persons = personsData.persons || [];
+      latestUpdated = personsData.updated || '';
       if (persons.length > 0) {
-        var allImpark = [], allRecall = [];
         await Promise.all(persons.map(async function(name) {
           try {
             var r = await fetch(personRawUrl(name) + '?v=' + Date.now());
@@ -355,45 +357,34 @@ async function initApp() {
             }
           } catch(e) {}
         }));
-        window._ALL_IMPARK    = allImpark;
-        window._ALL_RECALL_DB = allRecall;
-        window._ALL_PERSONS   = persons;
-        document.getElementById('nameUpdated').textContent = personsData.updated ? '최근 업데이트: ' + personsData.updated : '';
-        window._FRESH_UPLOAD = false;
-        showNameSelection();
-        return;
       }
     }
   } catch(e) {}
 
-  // ── 2차: 구 포맷 폴백 (data.json) ──
-  var data = null;
+  // ── 2차: 구 포맷 data.json 에서 아직 마이그레이션 안 된 사람 추가 ──
   try {
-    var token = localStorage.getItem('gh_token') || '';
-    var headers = { 'Accept': 'application/vnd.github.v3+json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    var apiResp = await fetch(GH_API, { headers: headers });
-    if (apiResp.ok) {
-      var fileInfo = await apiResp.json();
-      if (fileInfo.content) {
-        data = JSON.parse(b64decode(fileInfo.content));
-      } else if (fileInfo.download_url) {
-        var dlResp = await fetch(fileInfo.download_url + '?v=' + Date.now());
-        if (dlResp.ok) data = await dlResp.json();
+    var rawResp = await fetch(GH_RAW + '?v=' + Date.now());
+    if (rawResp.ok) {
+      var oldData = await rawResp.json();
+      if (oldData && oldData.persons) {
+        var newSet = new Set(persons);
+        var oldPersons = (oldData.persons || []).filter(function(p){ return !newSet.has(p); });
+        if (oldPersons.length > 0) {
+          var oldSet = new Set(oldPersons);
+          allImpark = allImpark.concat((oldData.impark || []).filter(function(r){ return oldSet.has(r.담당자); }));
+          allRecall = allRecall.concat((oldData.recall || []).filter(function(r){ return oldSet.has(r.담당자); }));
+          persons = [...new Set([...persons, ...oldPersons])].sort();
+          if (!latestUpdated) latestUpdated = oldData.updated || '';
+        }
       }
     }
   } catch(e) {}
-  if (!data) {
-    try {
-      var rawResp = await fetch(GH_RAW + '?v=' + Date.now());
-      if (rawResp.ok) data = await rawResp.json();
-    } catch(e) {}
-  }
-  if (data && data.impark && data.impark.length > 0) {
-    window._ALL_IMPARK    = data.impark  || [];
-    window._ALL_RECALL_DB = data.recall  || [];
-    window._ALL_PERSONS   = data.persons || [];
-    document.getElementById('nameUpdated').textContent = data.updated ? '최근 업데이트: ' + data.updated : '';
+
+  if (allImpark.length > 0 || persons.length > 0) {
+    window._ALL_IMPARK    = allImpark;
+    window._ALL_RECALL_DB = allRecall;
+    window._ALL_PERSONS   = persons;
+    document.getElementById('nameUpdated').textContent = latestUpdated ? '최근 업데이트: ' + latestUpdated : '';
     window._FRESH_UPLOAD = false;
     showNameSelection();
     return;
