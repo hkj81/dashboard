@@ -309,6 +309,10 @@ const GH_REPO  = 'dashboard';
 const GH_FILE  = 'data.json';
 const GH_RAW   = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/' + GH_FILE;
 const GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + GH_FILE;
+const GH_BASE  = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO;
+const GH_PERSONS_RAW = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/persons.json';
+function personFileName(n) { return 'data_' + n + '.json'; }
+function personRawUrl(n)   { return 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/data_' + encodeURIComponent(n) + '.json'; }
 
 // ── 전역 데이터 ──
 const files = {매출:null, 반품불가:null, 향정:null};
@@ -332,9 +336,38 @@ function b64decode(b64) {
 
 async function initApp() {
   showOnly('loadingSection');
-  var data = null;
 
-  // 1차: GitHub API (CDN 캐시 없음, 항상 최신)
+  // ── 1차: 새 포맷 (persons.json + 개인별 파일) ──
+  try {
+    var pResp = await fetch(GH_PERSONS_RAW + '?v=' + Date.now());
+    if (pResp.ok) {
+      var personsData = await pResp.json();
+      var persons = personsData.persons || [];
+      if (persons.length > 0) {
+        var allImpark = [], allRecall = [];
+        await Promise.all(persons.map(async function(name) {
+          try {
+            var r = await fetch(personRawUrl(name) + '?v=' + Date.now());
+            if (r.ok) {
+              var d = await r.json();
+              allImpark = allImpark.concat(d.impark || []);
+              allRecall = allRecall.concat(d.recall || []);
+            }
+          } catch(e) {}
+        }));
+        window._ALL_IMPARK    = allImpark;
+        window._ALL_RECALL_DB = allRecall;
+        window._ALL_PERSONS   = persons;
+        document.getElementById('nameUpdated').textContent = personsData.updated ? '최근 업데이트: ' + personsData.updated : '';
+        window._FRESH_UPLOAD = false;
+        showNameSelection();
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // ── 2차: 구 포맷 폴백 (data.json) ──
+  var data = null;
   try {
     var token = localStorage.getItem('gh_token') || '';
     var headers = { 'Accept': 'application/vnd.github.v3+json' };
@@ -343,30 +376,24 @@ async function initApp() {
     if (apiResp.ok) {
       var fileInfo = await apiResp.json();
       if (fileInfo.content) {
-        // 일반 파일 (1MB 이하)
         data = JSON.parse(b64decode(fileInfo.content));
       } else if (fileInfo.download_url) {
-        // 대용량 파일: download_url로 직접 가져오기
         var dlResp = await fetch(fileInfo.download_url + '?v=' + Date.now());
         if (dlResp.ok) data = await dlResp.json();
       }
     }
   } catch(e) {}
-
-  // 2차: raw URL (API 실패 시 폴백)
   if (!data) {
     try {
       var rawResp = await fetch(GH_RAW + '?v=' + Date.now());
       if (rawResp.ok) data = await rawResp.json();
     } catch(e) {}
   }
-
   if (data && data.impark && data.impark.length > 0) {
     window._ALL_IMPARK    = data.impark  || [];
     window._ALL_RECALL_DB = data.recall  || [];
     window._ALL_PERSONS   = data.persons || [];
-    var updated = data.updated || '';
-    document.getElementById('nameUpdated').textContent = updated ? '최근 업데이트: ' + updated : '';
+    document.getElementById('nameUpdated').textContent = data.updated ? '최근 업데이트: ' + data.updated : '';
     window._FRESH_UPLOAD = false;
     showNameSelection();
     return;
@@ -677,93 +704,91 @@ async function doSaveToGitHub(token) {
   btn.disabled = true;
 
   var today = new Date().toISOString().slice(0,10);
-  var GH_BASE = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO;
   var authHdr = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
 
   try {
-    // ── 기존 GitHub 데이터 불러와서 병합 ──
-    var existImpark = [];
-    var existRecall = [];
-
-    try {
-      var getResp = await fetch(GH_API, {
-        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
-      });
-      if (getResp.ok) {
-        var fileInfo = await getResp.json();
-        var existJson = null;
-        if (fileInfo.content) {
-          existJson = JSON.parse(b64decode(fileInfo.content));
-        } else if (fileInfo.download_url) {
-          var dlResp = await fetch(fileInfo.download_url + '?v=' + Date.now());
-          if (dlResp.ok) existJson = await dlResp.json();
-        }
-        if (existJson) { existImpark = existJson.impark || []; existRecall = existJson.recall || []; }
-      }
-    } catch(e) {}
-
-    // 병합
     var myPersons = window._ALL_PERSONS;
-    var mergedImpark = existImpark.filter(function(r){ return myPersons.indexOf(r.담당자) === -1; }).concat(window._ALL_IMPARK);
-    var mergedRecall = existRecall.filter(function(r){ return myPersons.indexOf(r.담당자) === -1; }).concat(window._ALL_RECALL_DB);
-    var mergedPersons = [...new Set(
-      mergedImpark.map(function(r){ return r.담당자; }).concat(mergedRecall.map(function(r){ return r.담당자; })).filter(Boolean)
-    )].sort();
 
-    var jsonStr = JSON.stringify({ updated: today, persons: mergedPersons, impark: mergedImpark, recall: mergedRecall });
+    // ── 기존 persons.json 에서 전체 담당자 목록 가져오기 ──
+    var existingPersons = [];
+    try {
+      var pResp = await fetch(GH_PERSONS_RAW + '?v=' + Date.now());
+      if (pResp.ok) { existingPersons = (await pResp.json()).persons || []; }
+    } catch(e) {}
+    var newPersons = [...new Set([...existingPersons, ...myPersons])].sort();
+
+    // ── 저장할 파일 내용 ──
+    // 개인 데이터 파일: impark + recall 모두 포함
+    var personContent = JSON.stringify({
+      updated: today,
+      impark: window._ALL_IMPARK,
+      recall: window._ALL_RECALL_DB
+    });
+    // persons.json 목록 파일
+    var manifestContent = JSON.stringify({ updated: today, persons: newPersons });
 
     // ── Git Data API (파일 크기 제한 없음) ──
     // 1. 최신 커밋 SHA
     var refResp = await fetch(GH_BASE + '/git/refs/heads/main', { headers: authHdr });
-    if (!refResp.ok) throw new Error('브랜치 정보 조회 실패 (' + refResp.status + ')');
+    if (!refResp.ok) throw new Error('브랜치 조회 실패 (' + refResp.status + ')');
     var latestCommitSha = (await refResp.json()).object.sha;
 
     // 2. 커밋의 tree SHA
     var commitResp = await fetch(GH_BASE + '/git/commits/' + latestCommitSha, { headers: authHdr });
-    if (!commitResp.ok) throw new Error('커밋 정보 조회 실패');
+    if (!commitResp.ok) throw new Error('커밋 조회 실패');
     var baseTreeSha = (await commitResp.json()).tree.sha;
 
-    // 3. Blob 생성 (utf-8 직접 저장 → Base64 인코딩 불필요)
-    var blobResp = await fetch(GH_BASE + '/git/blobs', {
+    // 3. Blob 생성 - 개인 데이터
+    var b1 = await fetch(GH_BASE + '/git/blobs', {
       method: 'POST', headers: authHdr,
-      body: JSON.stringify({ content: jsonStr, encoding: 'utf-8' })
+      body: JSON.stringify({ content: personContent, encoding: 'utf-8' })
     });
-    if (!blobResp.ok) throw new Error('Blob 생성 실패');
-    var blobSha = (await blobResp.json()).sha;
+    if (!b1.ok) throw new Error('개인데이터 Blob 실패 (' + b1.status + ')');
+    var blobSha1 = (await b1.json()).sha;
 
-    // 4. 새 Tree 생성
+    // 4. Blob 생성 - persons.json
+    var b2 = await fetch(GH_BASE + '/git/blobs', {
+      method: 'POST', headers: authHdr,
+      body: JSON.stringify({ content: manifestContent, encoding: 'utf-8' })
+    });
+    if (!b2.ok) throw new Error('목록 Blob 실패');
+    var blobSha2 = (await b2.json()).sha;
+
+    // 5. Tree 생성 (두 파일 동시 업데이트)
+    var treeEntries = [
+      { path: personFileName(myPersons[0]), mode: '100644', type: 'blob', sha: blobSha1 },
+      { path: 'persons.json', mode: '100644', type: 'blob', sha: blobSha2 }
+    ];
     var treeResp = await fetch(GH_BASE + '/git/trees', {
       method: 'POST', headers: authHdr,
-      body: JSON.stringify({ base_tree: baseTreeSha, tree: [{ path: GH_FILE, mode: '100644', type: 'blob', sha: blobSha }] })
+      body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries })
     });
     if (!treeResp.ok) throw new Error('Tree 생성 실패');
     var newTreeSha = (await treeResp.json()).sha;
 
-    // 5. 새 커밋 생성
+    // 6. 커밋 생성
     var newCommitResp = await fetch(GH_BASE + '/git/commits', {
       method: 'POST', headers: authHdr,
-      body: JSON.stringify({ message: '데이터 업데이트 ' + today, tree: newTreeSha, parents: [latestCommitSha] })
+      body: JSON.stringify({ message: '데이터 업데이트 ' + today + ' (' + myPersons.join(', ') + ')', tree: newTreeSha, parents: [latestCommitSha] })
     });
     if (!newCommitResp.ok) throw new Error('커밋 생성 실패');
     var newCommitSha = (await newCommitResp.json()).sha;
 
-    // 6. main 브랜치 업데이트
+    // 7. main 브랜치 업데이트
     var updateResp = await fetch(GH_BASE + '/git/refs/heads/main', {
       method: 'PATCH', headers: authHdr,
       body: JSON.stringify({ sha: newCommitSha })
     });
 
     if (updateResp.ok) {
-      window._ALL_IMPARK    = mergedImpark;
-      window._ALL_RECALL_DB = mergedRecall;
-      window._ALL_PERSONS   = mergedPersons;
-      window._FRESH_UPLOAD  = false;
+      window._ALL_PERSONS  = newPersons;
+      window._FRESH_UPLOAD = false;
       btn.textContent = '✅ 저장 완료!';
       btn.style.background = '#1a3a5c';
       document.getElementById('nameUpdated').textContent = '최근 업데이트: ' + today;
       var nameList = document.getElementById('nameList');
-      nameList.innerHTML = mergedPersons.map(function(name) {
-        var cnt = mergedImpark.filter(function(r){ return r.담당자 === name; }).length;
+      nameList.innerHTML = newPersons.map(function(name) {
+        var cnt = window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }).length;
         return '<button class="name-btn" onclick="selectPerson(\'' + name.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">'
           + '👤 ' + name + '<span class="name-cnt">유통기한 임박 ' + cnt + '건</span></button>';
       }).join('');
