@@ -498,39 +498,97 @@ function processImage(pw, ph) {
     // 2) Gaussian blur 5×5
     const blurred = gaussBlur5(gray, pw, ph);
 
-    // 3) Otsu threshold
-    const thresh = otsu(blurred);
+    const sl       = parseInt(document.getElementById('sizeSlider').value);
+    const areaTable= [150, 320, 550, 850, 1250, 1800, 2600, 3800, 5500, 8000];
+    const baseArea = areaTable[sl - 1] || 1250;
+    const estR     = Math.max(5, Math.round(Math.sqrt(baseArea / Math.PI)));
 
-    // 4) Binary: 1 = pill
-    const binary = new Uint8Array(pw * ph);
-    if (bgMode === 'dark') {
-        // Pills brighter than dark background
-        for (let i = 0; i < binary.length; i++) binary[i] = blurred[i] > thresh ? 1 : 0;
+    let proc;
+
+    if (bgMode === 'light') {
+        // ── 엣지 기반 감지: 흰 배경 + 흰 알약처럼 명도 차이가 적어도 작동 ──
+
+        // Sobel 엣지 크기 계산
+        const edges = sobelMag(blurred, pw, ph);
+
+        // 히스토그램으로 상위 20% 엣지 기준값 결정
+        const hist = new Int32Array(256);
+        for (let i = 0; i < edges.length; i++) hist[edges[i]]++;
+        let cum = 0, eThresh = 5;
+        for (let e = 255; e >= 0; e--) {
+            cum += hist[e];
+            if (cum >= edges.length * 0.20) { eThresh = Math.max(4, e * 0.4); break; }
+        }
+
+        const edgeBin = new Uint8Array(pw * ph);
+        for (let i = 0; i < edgeBin.length; i++) edgeBin[i] = edges[i] > eThresh ? 1 : 0;
+
+        // 알약 반지름만큼 팽창 → 윤곽선이 내부를 채움
+        const fillR = Math.round(estR * 1.3);
+        proc = dilateBox(edgeBin, pw, ph, fillR);
+
+        // 침식으로 알약 분리
+        const sep = Math.max(1, Math.round(estR * 0.35));
+        for (let i = 0; i < sep; i++) proc = erode(proc, pw, ph);
+
     } else {
-        // Pills darker than bright background
-        for (let i = 0; i < binary.length; i++) binary[i] = blurred[i] < thresh ? 1 : 0;
+        // ── 밝기 기반 감지: 어두운 배경 (흰 알약이 밝게 보임) ──
+        const thresh = otsu(blurred);
+        proc = new Uint8Array(pw * ph);
+        for (let i = 0; i < proc.length; i++) proc[i] = blurred[i] > thresh ? 1 : 0;
+        const ep = sl <= 3 ? 1 : sl <= 7 ? 2 : 3;
+        for (let i = 0; i < ep; i++) proc = erode(proc, pw, ph);
     }
 
-    // 5) Erosion (separate touching pills)
-    const sl = parseInt(document.getElementById('sizeSlider').value);
-    const erosionPasses = sl <= 3 ? 1 : sl <= 7 ? 2 : 3;
-    let proc = binary;
-    for (let i = 0; i < erosionPasses; i++) proc = erode(proc, pw, ph);
-
-    // 6) Find blobs
-    const areaTable = [150, 320, 550, 850, 1250, 1800, 2600, 3800, 5500, 8000];
-    const baseArea  = areaTable[sl - 1] || 1250;
-    const blobs     = findBlobs(proc, pw, ph, baseArea * 0.2, baseArea * 6);
-
-    // 7) Draw results
+    const blobs = findBlobs(proc, pw, ph, baseArea * 0.2, baseArea * 6);
     drawResults(blobs, pw, ph);
-
     return blobs.length;
 }
 
 // ─────────────────────────────────────────────
 // Algorithms
 // ─────────────────────────────────────────────
+
+/** Sobel 엣지 크기 (밝기 변화량 측정) */
+function sobelMag(gray, w, h) {
+    const mag = new Uint8Array(w * h);
+    for (let y = 1; y < h-1; y++) {
+        for (let x = 1; x < w-1; x++) {
+            const r  = y*w+x;
+            const gx = -gray[r-w-1] - 2*gray[r-1] - gray[r+w-1]
+                      + gray[r-w+1] + 2*gray[r+1] + gray[r+w+1];
+            const gy = -gray[r-w-1] - 2*gray[r-w] - gray[r-w+1]
+                      + gray[r+w-1] + 2*gray[r+w] + gray[r+w+1];
+            mag[r] = Math.min(255, Math.sqrt(gx*gx + gy*gy) | 0);
+        }
+    }
+    return mag;
+}
+
+/** 고속 박스 팽창 – 행→열 슬라이딩 윈도우, O(n) */
+function dilateBox(b, w, h, radius) {
+    const tmp = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+        let cnt = 0;
+        for (let x = 0; x <= Math.min(radius, w-1); x++) if (b[y*w+x]) cnt++;
+        for (let x = 0; x < w; x++) {
+            if (cnt > 0) tmp[y*w+x] = 1;
+            if (x+radius+1 < w && b[y*w+x+radius+1]) cnt++;
+            if (x-radius   >= 0 && b[y*w+x-radius  ]) cnt--;
+        }
+    }
+    const out = new Uint8Array(w * h);
+    for (let x = 0; x < w; x++) {
+        let cnt = 0;
+        for (let y = 0; y <= Math.min(radius, h-1); y++) if (tmp[y*w+x]) cnt++;
+        for (let y = 0; y < h; y++) {
+            if (cnt > 0) out[y*w+x] = 1;
+            if (y+radius+1 < h && tmp[(y+radius+1)*w+x]) cnt++;
+            if (y-radius   >= 0 && tmp[(y-radius  )*w+x]) cnt--;
+        }
+    }
+    return out;
+}
 
 /** 5×5 Gaussian blur */
 function gaussBlur5(gray, w, h) {
