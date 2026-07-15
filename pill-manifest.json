@@ -1,0 +1,24 @@
+{
+  "name": "알약 카운터",
+  "short_name": "알약카운터",
+  "description": "태전그룹 도매 시스템 - 알약 개수 자동 감지",
+  "start_url": "/dashboard/pill-counter.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%230f172a'/><ellipse cx='96' cy='96' rx='55' ry='30' fill='%2322c55e' opacity='0.9'/><ellipse cx='96' cy='96' rx='55' ry='30' fill='none' stroke='%2316a34a' stroke-width='4'/><line x1='41' y1='96' x2='151' y2='96' stroke='%2316a34a' stroke-width='3'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%230f172a'/><ellipse cx='256' cy='256' rx='145' ry='80' fill='%2322c55e' opacity='0.9'/><ellipse cx='256' cy='256' rx='145' ry='80' fill='none' stroke='%2316a34a' stroke-width='10'/><line x1='111' y1='256' x2='401' y2='256' stroke='%2316a34a' stroke-width='8'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
