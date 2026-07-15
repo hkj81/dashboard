@@ -541,7 +541,13 @@ function processImage(pw, ph) {
         for (let i = 0; i < ep; i++) proc = erode(proc, pw, ph);
     }
 
-    const blobs = findBlobs(proc, pw, ph, baseArea * 0.2, baseArea * 6);
+    const allBlobs = findBlobs(proc, pw, ph, baseArea * 0.2, baseArea * 6);
+
+    // 가이드 박스 안쪽만 인정 (배경 오감지 차단)
+    const gx1 = pw * 0.09, gx2 = pw * 0.91;
+    const gy1 = ph * 0.18, gy2 = ph * 0.82;
+    const blobs = allBlobs.filter(b => b.cx >= gx1 && b.cx <= gx2 && b.cy >= gy1 && b.cy <= gy2);
+
     drawResults(blobs, pw, ph);
     return blobs.length;
 }
