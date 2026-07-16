@@ -403,8 +403,8 @@ function aiCount() {
 
 function saveApiKey() {
     const key = document.getElementById('apiKeyInput').value.trim();
-    if (!key.startsWith('AIza')) {
-        alert('올바른 API 키를 입력해주세요 (AIza 로 시작)');
+    if (key.length < 10) {
+        alert('API 키가 너무 짧습니다. 다시 확인해주세요.');
         return;
     }
     geminiKey = key;
