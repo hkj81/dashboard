@@ -311,6 +311,8 @@
         <div class="spinner"></div>
         <div class="proc-text">분석 중...</div>
     </div>
+
+    <button onclick="flipCamera()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;color:#fff;z-index:10;" title="카메라 전환">🔄</button>
 </div>
 
 <!-- Bottom controls -->
@@ -488,10 +490,17 @@ async function runGemini() {
 // ─────────────────────────────────────────────
 // Camera
 // ─────────────────────────────────────────────
-async function startCamera() {
+let currentFacing = 'environment';
+
+async function startCamera(facing) {
+    facing = facing || currentFacing;
+    currentFacing = facing;
     try {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } }
+            video: { facingMode: { ideal: facing }, width: { ideal: 1920 } }
         });
         video.srcObject = stream;
         await video.play();
@@ -499,6 +508,11 @@ async function startCamera() {
     } catch(e) {
         setStatus('❌ 카메라 권한을 허용해주세요 (브라우저 주소창 → 자물쇠 아이콘)');
     }
+}
+
+function flipCamera() {
+    currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
+    startCamera(currentFacing);
 }
 
 // ─────────────────────────────────────────────
