@@ -418,7 +418,7 @@ function saveApiKey() {
 async function runGemini() {
     // 사진 먼저 찍기
     const vw = video.videoWidth, vh = video.videoHeight;
-    const MAX = 800;
+    const MAX = 1280;
     const pScale = Math.min(MAX / vw, MAX / vh, 1);
     const pw = Math.round(vw * pScale), ph = Math.round(vh * pScale);
     processCanvas.width = pw; processCanvas.height = ph;
@@ -436,11 +436,11 @@ async function runGemini() {
     try {
         // 이미지 → JPEG base64
         const tc = document.createElement('canvas');
-        const s  = Math.min(1024 / pw, 1024 / ph, 1);
+        const s  = Math.min(1280 / pw, 1280 / ph, 1);
         tc.width  = Math.round(pw * s);
         tc.height = Math.round(ph * s);
         tc.getContext('2d').drawImage(processCanvas, 0, 0, tc.width, tc.height);
-        const b64 = tc.toDataURL('image/jpeg', 0.85).split(',')[1];
+        const b64 = tc.toDataURL('image/jpeg', 0.92).split(',')[1];
 
         const res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
@@ -451,7 +451,7 @@ async function runGemini() {
                     contents: [{
                         parts: [
                             { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                            { text: '이 사진에서 알약(정제, 캡슐)이 몇 개 있는지 정확히 세어주세요. 숫자만 답하세요. 예: 15' }
+                            { text: '이 사진에 있는 알약(정제, 캡슐, 환약)을 하나씩 빠짐없이 세어주세요. 겹쳐있거나 일부 가려진 것도 포함하고, 조각난 것은 제외하세요. 포장(블리스터팩, 봉투)에 들어있는 것도 각각 세어주세요. 절대 숫자만 답하세요. 예: 42' }
                         ]
                     }]
                 })
