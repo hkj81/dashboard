@@ -164,6 +164,14 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   <div class="scroll" id="prof-ai" style="display:none;padding:14px 18px 100px;"></div>
 </div>
 
+<!-- STRENGTH DETAIL MODAL -->
+<div class="modal" id="str-modal" onclick="closeStrModal(event)">
+  <div class="modal-box" id="str-modal-box" onclick="event.stopPropagation()" style="max-height:80vh;overflow-y:auto;">
+    <div id="str-modal-content"></div>
+    <button class="modal-cancel" onclick="document.getElementById('str-modal').classList.remove('open')" style="margin-top:8px">닫기</button>
+  </div>
+</div>
+
 <!-- TOKEN MODAL -->
 <div class="modal" id="tok-modal">
   <div class="modal-box">
@@ -398,21 +406,14 @@ function openProfile(name){
   // 강점 탭
   const cardsHtml=d.top5.map((ko,i)=>{
     const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
-    return`<div class="str-card" style="background:${dom.bg}">
-      <div class="str-card-top" onclick="toggleCard('card-${i}')">
+    return`<div class="str-card" style="background:${dom.bg};cursor:pointer" onclick="openStrModal('${ko}',${i+1})">
+      <div class="str-card-top">
         <div class="rank-circle" style="color:${dom.color}">${i+1}</div>
         <div class="sc-info">
           <div class="sc-ko">${ko}</div><div class="sc-en">${s?.en||''}</div>
           <span class="sc-domain" style="color:${dom.color}">${dom.name}</span>
         </div>
         <span style="color:${dom.color};font-size:18px">›</span>
-      </div>
-      <div class="str-expand" id="card-${i}">
-        <div class="str-desc">${s?.desc||''}</div>
-        <div class="str-pros-cons">
-          <div class="pros-box"><div class="box-label">✅ 강점</div><div class="box-content">${s?.pros||''}</div></div>
-          <div class="cons-box"><div class="box-label">⚠️ 주의</div><div class="box-content">${s?.cons||''}</div></div>
-        </div>
       </div>
     </div>`;
   }).join('');
@@ -438,6 +439,47 @@ function openProfile(name){
   // 기본 탭: 강점
   switchPTab('str');
   showScreen('s-profile');
+}
+
+function closeStrModal(e){ if(e.target===document.getElementById('str-modal')) document.getElementById('str-modal').classList.remove('open'); }
+
+function openStrModal(ko, rank){
+  const s=S.find(x=>x.ko===ko);
+  const dom=DOM[s?.d||'ex'];
+  // 저장된 메모 불러오기
+  const memoKey='strMemo_'+curPerson+'_'+ko;
+  const saved=localStorage.getItem(memoKey)||'';
+  document.getElementById('str-modal-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:44px;height:44px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:${dom.color}">${rank}</div>
+      <div>
+        <div style="font-size:20px;font-weight:800">${ko}</div>
+        <div style="font-size:13px;color:var(--text3)">${s?.en||''} · <span style="color:${dom.color}">${dom.name}</span></div>
+      </div>
+    </div>
+    <div style="background:${dom.bg};border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text2);line-height:1.7">${s?.desc||''}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div class="pros-box"><div class="box-label">✅ 강점</div><div class="box-content">${s?.pros||''}</div></div>
+      <div class="cons-box"><div class="box-label">⚠️ 주의</div><div class="box-content">${s?.cons||''}</div></div>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px">📝 나만의 메모 (교육 자료 내용 입력)</div>
+      <textarea id="str-memo" rows="5" placeholder="갤럽 교육에서 받은 자료 내용, 느낀 점 등을 자유롭게 입력하세요..."
+        style="width:100%;background:var(--bg);border:1px solid var(--surface2);border-radius:10px;padding:12px;color:var(--text);font-size:13px;line-height:1.6;resize:vertical">${saved}</textarea>
+    </div>
+    <button onclick="saveMemo('${ko}')" style="width:100%;padding:12px;background:#22c55e;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;cursor:pointer">💾 메모 저장</button>
+  `;
+  document.getElementById('str-modal').classList.add('open');
+}
+
+function saveMemo(ko){
+  const val=document.getElementById('str-memo').value;
+  localStorage.setItem('strMemo_'+curPerson+'_'+ko, val);
+  const btn=event.target;
+  btn.textContent='✅ 저장됨!';
+  setTimeout(()=>btn.textContent='💾 메모 저장',1500);
 }
 
 function toggleCard(id){
@@ -476,39 +518,36 @@ async function runAI(name){
   const d=allData[name];if(!d)return;
   const el=document.getElementById('ai-result');
   el.innerHTML='<div style="text-align:center;padding:20px"><span class="spin"></span>AI 분석 중...</div>';
-  const top5Info=d.top5.map((ko,i)=>{const s=S.find(x=>x.ko===ko);return`${i+1}위: ${ko}(${s?.en||''})-${DOM[s?.d||'ex'].name}`;}).join(', ');
-  const prompt=`갤럽 CliftonStrengths 전문 코치로서 ${name}님의 강점을 분석해주세요.
+  const top5Info=d.top5.map((ko,i)=>{const s=S.find(x=>x.ko===ko);return`${i+1}위: ${ko}(${s?.en||''}, ${DOM[s?.d||'ex'].name}) - ${s?.desc||''}`;}).join('\n');
+  const prompt=`당신은 갤럽 CliftonStrengths 전문 코치입니다. ${name}님의 강점 조합을 깊이 있게 분석해주세요.
 
-상위 5개 강점: ${top5Info}
+상위 5개 강점:
+${top5Info}
 
-아래 형식으로 한국어로 답변하세요:
+아래 각 항목을 자연스럽고 구체적인 한국어 문장으로 풍부하게 작성해주세요. 각 섹션은 3~5문장 이상으로 써주세요.
 
-### 종합 분석
-(이 강점 조합이 만드는 핵심 특성 3-4문장)
+### 종합 성격 분석
+이 강점 조합이 만드는 이 사람의 핵심 특성과 일하는 방식을 구체적으로 설명하세요. 강점들이 서로 어떻게 연결되는지 보여주세요.
 
-### 강점 시너지
-(5개 강점이 함께 만드는 특별한 힘)
+### 강점 조합의 시너지
+5개 강점이 함께 만들어내는 특별한 힘을 설명하세요. 이 조합이 다른 사람과 어떻게 다른지, 어떤 상황에서 특히 빛나는지 서술하세요.
 
-### 주요 장점 3가지
-1.
-2.
-3.
+### 주요 강점 3가지
+각 강점을 한 줄 제목 뒤에 2~3문장으로 구체적으로 설명하세요.
 
-### 주의할 점 3가지
-1.
-2.
-3.
+### 주의해야 할 점 3가지
+각 항목을 한 줄 제목 뒤에 2~3문장으로 구체적인 상황과 함께 설명하세요.
 
 ### 최적의 팀 역할
-(이 사람이 팀에서 빛나는 역할)
+이 사람이 팀에서 가장 빛나는 역할과 그 이유를 구체적으로 서술하세요.
 
-### 협업 팁
-(이 사람과 일할 때 효과적인 방법)`;
+### 함께 일할 때 팁
+이 사람과 효과적으로 협업하는 방법을 실용적이고 구체적으로 설명하세요.`;
 
   try{
     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:800}})
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.8,maxOutputTokens:2000}})
     });
     if(!r.ok){
       if(r.status===400||r.status===401||r.status===403){geminiKey='';localStorage.removeItem('geminiKey');throw new Error('API 키 오류');}
@@ -516,9 +555,12 @@ async function runAI(name){
     }
     const data=await r.json();
     let text=data.candidates?.[0]?.content?.parts?.[0]?.text||'분석 결과를 가져오지 못했습니다.';
-    // 마크다운 렌더링
-    text=text.replace(/### (.+)/g,'<h3>$1</h3>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-    el.innerHTML=`<div class="ai-result">${text}</div>`;
+    text=text
+      .replace(/### (.+)/g,'<h3 style="color:#a78bfa;font-size:14px;margin:16px 0 6px">$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#f1f5f9">$1</strong>')
+      .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+    el.innerHTML=`<div class="ai-result" style="font-size:14px;line-height:1.8;color:#cbd5e1">${text}</div>
+      <button onclick="runAI('${name}')" style="margin-top:14px;background:var(--surface2);border:none;border-radius:10px;color:var(--text2);padding:8px 16px;font-size:12px;cursor:pointer">🔄 다시 생성</button>`;
   }catch(e){
     el.innerHTML=`<div style="color:#ef4444;font-size:13px;padding:10px">오류: ${e.message}</div>`;
   }
