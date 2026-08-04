@@ -165,8 +165,8 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 </div>
 
 <!-- STRENGTH DETAIL MODAL -->
-<div class="modal" id="str-modal" onclick="closeStrModal(event)">
-  <div class="modal-box" id="str-modal-box" onclick="event.stopPropagation()" style="max-height:80vh;overflow-y:auto;">
+<div class="modal" id="str-modal" onclick="closeStrModal(event)" style="align-items:center;justify-content:center;padding:16px;">
+  <div class="modal-box" id="str-modal-box" onclick="event.stopPropagation()" style="max-height:75vh;overflow-y:auto;padding:20px;border-radius:20px;max-width:420px;width:100%;">
     <div id="str-modal-content"></div>
     <button class="modal-cancel" onclick="document.getElementById('str-modal').classList.remove('open')" style="margin-top:8px">닫기</button>
   </div>
@@ -206,40 +206,40 @@ const TEAMS = [
 ];
 
 const S = [
-  {ko:'성취',en:'Achiever',d:'ex',desc:'끊임없이 일하며 매일 생산성에서 에너지를 얻습니다.',pros:'높은 생산성, 강한 자기동기부여',cons:'팀원에게 과도한 기대, 번아웃 위험'},
-  {ko:'조율',en:'Arranger',d:'ex',desc:'복잡한 상황에서 사람과 자원을 유연하게 배치합니다.',pros:'뛰어난 실행력, 자원 최적화',cons:'과도하게 복잡한 계획 수립'},
-  {ko:'신념',en:'Belief',d:'ex',desc:'깊은 가치관을 바탕으로 일관된 방향을 유지합니다.',pros:'강한 신뢰성, 일관된 행동',cons:'유연성 부족, 다른 견해 수용 어려움'},
-  {ko:'일관성',en:'Consistency',d:'ex',desc:'모두에게 공평한 규칙과 절차를 중요시합니다.',pros:'공정함, 예측 가능한 행동',cons:'변화에 저항, 예외 상황 처리 어려움'},
-  {ko:'신중',en:'Deliberative',d:'ex',desc:'위험을 미리 예측하고 신중하게 의사결정합니다.',pros:'실수 최소화, 리스크 관리',cons:'결정 속도 저하, 기회 놓칠 수 있음'},
-  {ko:'절제',en:'Discipline',d:'ex',desc:'계획적이고 체계적으로 시간과 자원을 관리합니다.',pros:'높은 정확성, 체계적 실행',cons:'자발성 부족, 유연성이 떨어짐'},
-  {ko:'집중',en:'Focus',d:'ex',desc:'목표를 설정하고 그 방향으로 집중적으로 나아갑니다.',pros:'탁월한 목표 달성, 효율성',cons:'갑작스러운 방향 변화에 어려움'},
-  {ko:'책임',en:'Responsibility',d:'ex',desc:'맡은 일에 강한 책임감을 가지며 약속을 반드시 지킵니다.',pros:'높은 신뢰성, 완벽한 완수',cons:'과도한 책임감으로 번아웃 위험'},
-  {ko:'회복',en:'Restorative',d:'ex',desc:'문제를 발견하고 해결하는 데 탁월한 능력을 발휘합니다.',pros:'문제 해결 능력, 위기 대응력',cons:'문제가 없으면 불안해할 수 있음'},
-  {ko:'행동',en:'Activator',d:'in',desc:'아이디어를 즉시 행동으로 옮기고 다른 사람들을 자극합니다.',pros:'빠른 실행력, 팀 에너지 촉진',cons:'충분한 계획 없이 실행할 수 있음'},
-  {ko:'주도',en:'Command',d:'in',desc:'위기 상황에서도 자신 있게 결정을 내리고 방향을 제시합니다.',pros:'강력한 리더십, 명확한 결단력',cons:'독단적으로 보일 수 있음'},
-  {ko:'소통',en:'Communication',d:'in',desc:'아이디어를 생생하게 전달하는 탁월한 표현력을 지닙니다.',pros:'설득력, 명확한 메시지 전달',cons:'말이 많아 상대를 지치게 할 수 있음'},
-  {ko:'경쟁',en:'Competition',d:'in',desc:'남들과 비교하며 최고가 되고자 하는 강한 동기를 가집니다.',pros:'높은 성취 욕구, 탁월한 성과',cons:'협력보다 경쟁을 우선시할 수 있음'},
-  {ko:'최대화',en:'Maximizer',d:'in',desc:'개인과 팀의 강점을 파악하고 탁월함으로 이끌어냅니다.',pros:'강점 극대화, 탁월한 품질 추구',cons:'평균적 성과에 만족 못할 수 있음'},
-  {ko:'자기확신',en:'Self-Assurance',d:'in',desc:'자신의 판단과 능력에 강한 확신을 가지고 행동합니다.',pros:'강한 의사결정력, 안정감',cons:'다른 의견을 무시할 수 있음'},
-  {ko:'인정욕구',en:'Significance',d:'in',desc:'차별화되고 독보적인 존재로 인정받고자 합니다.',pros:'높은 성취 동기, 탁월함 추구',cons:'인정받지 못할 때 좌절감이 큼'},
-  {ko:'설득',en:'Woo',d:'in',desc:'처음 만나는 사람도 편안하게 하고 새로운 관계를 쉽게 맺습니다.',pros:'뛰어난 네트워킹, 첫인상 강점',cons:'깊은 관계 형성이 상대적으로 어려움'},
-  {ko:'적응',en:'Adaptability',d:'re',desc:'현재 순간에 충실하며 변화에 유연하게 적응합니다.',pros:'높은 유연성, 스트레스 내성',cons:'장기 계획 수립이 어려울 수 있음'},
-  {ko:'연대',en:'Connectedness',d:'re',desc:'모든 것은 연결되어 있다는 믿음으로 의미와 목적을 발견합니다.',pros:'큰 그림 이해, 팀 연대감 형성',cons:'행동보다 의미 찾기에 치중할 수 있음'},
-  {ko:'개발',en:'Developer',d:'re',desc:'다른 사람의 잠재력을 발견하고 성장을 돕는 데 보람을 느낍니다.',pros:'탁월한 코칭, 팀원 성장 지원',cons:'성과보다 과정에 집중해 효율 저하'},
-  {ko:'공감',en:'Empathy',d:'re',desc:'타인의 감정을 깊이 이해하고 함께 느끼는 능력이 탁월합니다.',pros:'강한 신뢰 관계, 갈등 중재',cons:'감정적으로 소진될 수 있음'},
-  {ko:'화합',en:'Harmony',d:'re',desc:'갈등을 피하고 공통점을 찾아 합의를 이끌어냅니다.',pros:'팀 분위기 조성, 협력 촉진',cons:'필요한 갈등도 피하려 할 수 있음'},
-  {ko:'포용',en:'Includer',d:'re',desc:'모든 사람을 환영하고 소외되는 사람이 없도록 배려합니다.',pros:'강한 포용력, 팀 화합',cons:'경계 설정이 어려울 수 있음'},
-  {ko:'개별화',en:'Individualization',d:'re',desc:'각 사람의 고유한 특성과 차이를 세심하게 파악합니다.',pros:'맞춤형 접근, 팀원 이해도',cons:'일관된 규칙 적용이 어려울 수 있음'},
-  {ko:'긍정',en:'Positivity',d:'re',desc:'열정적이고 생기 넘치는 태도로 주변을 활기차게 만듭니다.',pros:'팀 사기 진작, 낙관적 에너지',cons:'현실적인 문제를 직시하기 어려울 수 있음'},
-  {ko:'절친',en:'Relator',d:'re',desc:'깊고 진실된 관계를 추구하며 친한 사람들과의 유대감을 소중히 여깁니다.',pros:'강한 신뢰 관계, 깊은 협력',cons:'새로운 관계 형성이 느릴 수 있음'},
-  {ko:'분석',en:'Analytical',d:'st',desc:'데이터와 논리를 바탕으로 상황의 본질을 파악합니다.',pros:'정확한 판단, 근거 기반 의사결정',cons:'분석이 길어져 결정이 느려질 수 있음'},
-  {ko:'맥락',en:'Context',d:'st',desc:'과거의 경험과 역사에서 현재의 방향을 찾습니다.',pros:'깊은 이해력, 실수 예방',cons:'과거에 집착해 변화를 거부할 수 있음'},
-  {ko:'미래지향',en:'Futuristic',d:'st',desc:'미래를 구체적으로 상상하고 가능성에서 영감을 얻습니다.',pros:'비전 제시, 혁신 추구',cons:'현재의 실무에 집중하기 어려울 수 있음'},
-  {ko:'착상',en:'Ideation',d:'st',desc:'다양한 현상 사이의 연결고리를 찾아 창의적 아이디어를 만듭니다.',pros:'창의성, 혁신적 발상',cons:'실행보다 아이디어에 머무를 수 있음'},
-  {ko:'수집',en:'Input',d:'st',desc:'정보와 아이디어를 수집하고 축적하는 것에서 만족감을 느낍니다.',pros:'풍부한 지식, 다양한 관점',cons:'필요 이상의 정보 수집으로 정리 어려움'},
-  {ko:'사색',en:'Intellection',d:'st',desc:'깊이 생각하고 혼자만의 지적 활동을 즐깁니다.',pros:'깊은 통찰력, 복잡한 문제 해결',cons:'혼자 시간이 필요해 팀과 단절될 수 있음'},
-  {ko:'학습',en:'Learner',d:'st',desc:'배우는 과정 자체에서 에너지를 얻으며 지속적으로 성장합니다.',pros:'빠른 습득력, 지속적 발전',cons:'실행보다 학습에 더 많은 시간 소요'},
-  {ko:'전략',en:'Strategic',d:'st',desc:'복잡한 상황에서 최적의 경로를 빠르게 파악합니다.',pros:'탁월한 문제 해결, 방향 설정',cons:'큰 그림에 집중해 세부사항을 놓칠 수 있음'},
+  {ko:'성취',en:'Achiever',d:'ex',desc:'매일 아침 새로운 에너지로 시작하며, 그 날 무언가를 성취해야 한다는 강한 내면의 욕구를 가지고 있습니다. 할 일 목록에 체크 표시를 하거나, 프로젝트를 완료하거나, 오랫동안 원하던 무언가를 달성할 때 만족감을 느낍니다. 쉬는 날에도 무언가를 해냈다는 느낌이 필요하며, 이 불꽃은 결코 완전히 꺼지지 않아 다음 목표를 향해 끊임없이 나아가게 합니다.',pros:'높은 생산성, 강한 자기동기부여, 팀에 에너지 전파',cons:'팀원에게 과도한 기대, 번아웃 위험, 쉬는 것을 죄책감으로 느낄 수 있음'},
+  {ko:'조율',en:'Arranger',d:'ex',desc:'복잡한 상황에서 사람과 자원을 최적으로 배치하는 능력이 탁월합니다. 여러 요소가 어떻게 조합될 수 있는지 항상 생각하며, 상황이 변화할 때 오히려 흥분감을 느낍니다. 최고의 생산성을 위해 인적 자원과 물적 자원을 정렬하고 재정렬하는 것에서 즐거움을 찾습니다.',pros:'뛰어난 실행력, 자원 최적화, 복잡한 프로젝트 조율',cons:'지나치게 복잡한 계획 수립, 단순한 상황에서 불만족'},
+  {ko:'신념',en:'Belief',d:'ex',desc:'변하지 않는 핵심 가치를 가지고 있으며, 이 가치들이 삶의 의미와 방향을 제공합니다. 가족, 이타주의, 영성 등 특정 가치들이 삶의 나침반 역할을 합니다. 이 가치들이 높은 윤리 의식을 만들어내며, 어떤 대가를 치르더라도 자신이 중요하다고 생각하는 것을 위해 일하게 합니다.',pros:'강한 신뢰성, 일관된 행동, 명확한 삶의 기준',cons:'유연성 부족, 다른 견해 수용 어려움, 타협을 약점으로 볼 수 있음'},
+  {ko:'일관성',en:'Consistency',d:'ex',desc:'모든 사람이 공평하게 대우받아야 한다고 믿으며, 명확한 규칙과 절차를 통해 이를 실현합니다. 편애나 특별 대우 없이 모두에게 동일한 기준을 적용하려 하며, 예측 가능하고 안정적인 환경을 만드는 데 기여합니다. 누군가가 규칙을 어기거나 특별 대우를 받을 때 불편함을 느낍니다.',pros:'공정함, 예측 가능한 행동, 안정적인 환경 조성',cons:'변화에 저항, 예외적 상황 처리 어려움, 융통성이 부족해 보일 수 있음'},
+  {ko:'신중',en:'Deliberative',d:'ex',desc:'결정을 내리기 전에 잠재적인 위험과 장애물을 신중하게 파악합니다. 함부로 행동하지 않으며, 선택하기 전에 정보를 충분히 수집하고 검토합니다. 이 조심스러운 접근 방식이 팀이 실수를 피하고 더 나은 결과를 얻도록 돕습니다.',pros:'실수 최소화, 리스크 관리, 신중한 의사결정',cons:'결정 속도 저하, 빠른 기회를 놓칠 수 있음, 우유부단해 보일 수 있음'},
+  {ko:'절제',en:'Discipline',d:'ex',desc:'세상이 질서 있고 예측 가능하기를 원합니다. 일상과 구조를 만들고, 프로젝트를 구체적인 마감일과 단계로 나눕니다. 혼돈이나 불확실성 앞에서도 체계적인 접근으로 정확성과 효율성을 유지하며, 다른 사람들이 계획을 지키도록 돕습니다.',pros:'높은 정확성, 체계적 실행, 마감 준수',cons:'자발성 부족, 갑작스러운 변화에 스트레스, 너무 경직될 수 있음'},
+  {ko:'집중',en:'Focus',d:'ex',desc:'매년, 매월, 매주, 매일 목표를 설정하고 그 목표를 향해 나아갑니다. 우선순위를 빠르게 파악하며, 목표와 관련 없는 것들을 과감히 제거할 수 있습니다. 이 방향 감각이 팀을 효율적으로 이끌며, 한 번 시작한 일은 끝까지 마무리하려 합니다.',pros:'탁월한 목표 달성, 효율성, 팀의 방향 제시',cons:'갑작스러운 방향 변화에 어려움, 무관한 기회를 무시할 수 있음'},
+  {ko:'책임',en:'Responsibility',d:'ex',desc:'맡은 일에 대해 심리적으로 책임을 집니다. 약속을 하면 반드시 지키려 하며, 어떤 이유로든 이행할 수 없다면 죄책감과 자기비판을 경험합니다. 이 헌신이 강한 윤리 의식을 만들어내며, 주변 사람들로부터 신뢰할 수 있는 사람으로 인식됩니다.',pros:'높은 신뢰성, 완벽한 완수, 강한 윤리 의식',cons:'과도한 책임감으로 번아웃 위험, 위임이 어려울 수 있음'},
+  {ko:'회복',en:'Restorative',d:'ex',desc:'문제를 해결하는 데 탁월합니다. 무엇이 잘못되었는지 분석하고 최선의 해결책을 찾는 과정에서 활력을 얻습니다. 일반적인 문제에서부터 복잡한 비즈니스 문제까지, 해결사로서의 역할에서 큰 만족감을 느낍니다.',pros:'뛰어난 문제 해결, 위기 대응력, 상황 개선 능력',cons:'문제가 없으면 불안해할 수 있음, 없는 문제를 찾으려 할 수 있음'},
+  {ko:'행동',en:'Activator',d:'in',desc:'"언제 시작할 수 있을까?"가 항상 머릿속에 있습니다. 분석이 끝나기를 기다리지 않고 행동을 통해 배우는 것을 선호합니다. 오직 행동만이 일이 일어나게 하며, 행동함으로써 팀에 에너지와 촉매 역할을 합니다.',pros:'빠른 실행력, 팀 에너지 촉진, 정체된 상황 돌파',cons:'충분한 계획 없이 실행, 리스크를 간과할 수 있음'},
+  {ko:'주도',en:'Command',d:'in',desc:'주도권을 쥐는 것을 두려워하지 않습니다. 다른 사람들이 불편해하는 대화도 직접 나누며, 사실을 있는 그대로 말합니다. 위기 상황에서 오히려 더 강해지며, 명확한 방향을 제시하여 혼돈을 질서로 바꾸는 능력이 있습니다.',pros:'강력한 리더십, 명확한 결단력, 위기 상황 대처',cons:'독단적으로 보일 수 있음, 타인의 감정에 둔감할 수 있음'},
+  {ko:'소통',en:'Communication',d:'in',desc:'아이디어, 감정, 사건들을 생생한 언어로 표현하는 것을 좋아합니다. 발표, 설명, 호스팅, 글쓰기 등을 통해 사람들이 집중하게 만드는 능력이 있습니다. 추상적인 개념을 구체적인 이미지와 이야기로 변환하여 사람들의 이해와 기억을 돕습니다.',pros:'높은 설득력, 명확한 메시지 전달, 청중 집중',cons:'말이 많아 상대를 지치게 할 수 있음, 경청보다 말하기에 집중'},
+  {ko:'경쟁',en:'Competition',d:'in',desc:'다른 사람들의 성과와 자신의 성과를 비교하며 동기를 얻습니다. 순위가 매겨지는 상황을 좋아하며 1등이 되고자 합니다. 이기지 못하면 그 경험에서 다음을 위한 교훈을 찾습니다. 경쟁이 있는 환경에서 최고의 성과를 냅니다.',pros:'높은 성취 욕구, 탁월한 성과, 팀 경쟁력 향상',cons:'협력보다 경쟁 우선, 패배 시 크게 좌절할 수 있음'},
+  {ko:'최대화',en:'Maximizer',d:'in',desc:'평균을 탁월함으로 변환하는 데 탁월합니다. 약점을 고치는 데 시간을 낭비하기보다는 강점을 더욱 발전시키는 것이 최선이라고 믿습니다. 개인과 그룹의 강점을 파악하고, 최고의 성과를 이끌어내는 방법을 찾습니다.',pros:'강점 극대화, 탁월한 품질 추구, 팀 능력 개발',cons:'약점 보완 무시, 평균적 성과에 만족 못함'},
+  {ko:'자기확신',en:'Self-Assurance',d:'in',desc:'자신의 능력과 판단에 대한 강한 내면의 확신이 있습니다. 다른 사람들이 의구심을 품는 상황에서도 자신의 방향을 믿으며 나아갑니다. 이 자신감이 리스크를 감수하고 새로운 도전에 나서는 것을 가능하게 하며, 주변 사람들에게 안정감을 줍니다.',pros:'강한 의사결정력, 안정감 제공, 어려운 상황에서도 자신감 유지',cons:'다른 의견 무시, 오만하게 보일 수 있음'},
+  {ko:'인정욕구',en:'Significance',d:'in',desc:'중요한 사람이 되고 싶어합니다. 사람들로부터 신뢰받고, 알려지고, 독립적이고 탁월한 존재로 인정받기를 원합니다. 이 열망이 높은 목표를 설정하고 뛰어난 성과를 추구하게 만드는 강력한 동력이 됩니다.',pros:'높은 성취 동기, 탁월함 추구, 자기 브랜딩',cons:'인정받지 못할 때 큰 좌절, 인정 욕구가 지나칠 수 있음'},
+  {ko:'설득',en:'Woo',d:'in',desc:'Winning Others Over(타인을 설득함)의 약자입니다. 낯선 사람을 만나는 것을 즐기며, 그들이 편안함을 느끼도록 빠르게 공감대를 형성합니다. 대화의 실마리를 찾고 새로운 관계를 열어가는 것에서 만족감을 얻습니다.',pros:'뛰어난 네트워킹, 강한 첫인상, 새로운 기회 창출',cons:'깊은 관계 형성이 상대적으로 어려움, 가볍게 보일 수 있음'},
+  {ko:'적응',en:'Adaptability',d:'re',desc:'현재를 살아가는 사람입니다. 미래는 아직 알 수 없으며, 매 순간 일어나는 요구에 유연하게 반응하며 만족감을 느낍니다. 예상치 못한 방향 전환도 위협이 아닌 흐름의 일부로 받아들이며, 변화 속에서도 높은 성과를 냅니다.',pros:'높은 유연성, 스트레스 내성, 변화 적응력',cons:'장기 계획 수립 어려움, 방향성 부족으로 보일 수 있음'},
+  {ko:'연대',en:'Connectedness',d:'re',desc:'모든 것은 연결되어 있다고 믿습니다. 우연은 없으며, 모든 사건에는 이유가 있다고 생각합니다. 이 믿음이 경계를 넘어 사람들을 연결하게 하며, 팀 전체가 하나의 큰 목적을 위해 일하고 있다는 감각을 만들어냅니다.',pros:'큰 그림 이해, 팀 연대감 형성, 의미 부여',cons:'행동보다 의미 찾기 집중, 실용성이 떨어져 보일 수 있음'},
+  {ko:'개발',en:'Developer',d:'re',desc:'사람들 안에 있는 잠재력을 알아봅니다. 개인의 작은 성장도 놓치지 않으며, 성장의 신호를 포착할 때 큰 만족감을 느낍니다. 사람들이 스스로 가능하다고 생각하는 것보다 더 많은 것을 할 수 있다는 믿음으로 그들을 돕습니다.',pros:'탁월한 코칭 능력, 팀원 성장 지원, 사람 투자',cons:'성과보다 과정 집중으로 효율 저하, 경계 없이 돕다 소진될 수 있음'},
+  {ko:'공감',en:'Empathy',d:'re',desc:'주변 사람들의 감정을 느낄 수 있습니다. 그들의 눈으로 세상을 보고, 그들의 감정을 느끼며, 그들의 질문을 이해합니다. 이 능력이 사람들과 깊은 신뢰 관계를 맺게 하며, 갈등 상황에서 감정의 온도를 조절하는 능력을 발휘합니다.',pros:'강한 신뢰 관계, 갈등 중재, 정서적 지지',cons:'감정적으로 소진될 수 있음, 타인 감정에 지나치게 영향받을 수 있음'},
+  {ko:'화합',en:'Harmony',d:'re',desc:'의견 불일치보다 합의를 추구합니다. 갈등은 비생산적이라고 보며, 다양한 관점을 가진 사람들 사이에서 공통점을 찾습니다. 불필요한 마찰을 줄이고 실질적인 결과를 만드는 데 집중하며, 팀의 협력적 분위기를 이끌어냅니다.',pros:'팀 분위기 조성, 협력 촉진, 갈등 최소화',cons:'필요한 갈등도 회피, 자신의 의견을 숨길 수 있음'},
+  {ko:'포용',en:'Includer',d:'re',desc:'그룹의 가장자리에 있는 사람들, 소외된 사람들을 알아채는 능력이 있습니다. 누구도 배제되어서는 안 된다고 생각하며, 모든 사람이 환영받는다고 느끼도록 노력합니다. 다양성을 가진 집단이 더 나은 결과를 만든다는 믿음을 가지고 있습니다.',pros:'강한 포용력, 팀 화합, 다양성 존중',cons:'경계 설정 어려움, 너무 많은 사람을 포용하다 에너지 소진'},
+  {ko:'개별화',en:'Individualization',d:'re',desc:'각 사람의 고유한 특성에 매력을 느낍니다. 다양한 사람들 사이의 차이를 관찰하고, 각 개인이 가장 잘할 수 있는 것이 무엇인지 파악하는 능력이 있습니다. 이 강점이 팀의 역할 분배와 개인 맞춤형 동기부여를 가능하게 합니다.',pros:'맞춤형 접근, 높은 팀원 이해도, 적재적소 배치',cons:'일관된 규칙 적용 어려움, 편애로 오해받을 수 있음'},
+  {ko:'긍정',en:'Positivity',d:'re',desc:'열정이 넘치며, 어떤 상황에서도 좋은 면을 찾으려 합니다. 삶의 밝은 면을 보고, 이 활기찬 에너지로 다른 사람들에게 영감을 줍니다. 생산성을 높이고 창의성을 자극하는 긍정적인 환경을 만드는 데 기여합니다.',pros:'팀 사기 진작, 낙관적 에너지, 창의적 환경 조성',cons:'현실적 문제 직시 어려움, 위험 신호를 과소평가할 수 있음'},
+  {ko:'절친',en:'Relator',d:'re',desc:'이미 신뢰가 쌓인 가까운 관계에서 더 큰 힘을 얻습니다. 깊고 오래가는 우정을 중요하게 여기고, 처음 보는 사람보다 잘 아는 사람과 있을 때 편안함을 느낍니다. 절친 테마가 강한 사람들은 이미 알고 있는 사람들에게 끌리지만, 꼭 새로운 사람을 피하는 것은 아닙니다. 친한 친구들에게서 많은 기쁨과 힘을 얻으며, 사람들과 깊고 친밀한 관계를 형성합니다.',pros:'강한 신뢰 관계, 깊은 협력, 오래 지속되는 팀워크',cons:'새로운 관계 형성이 느릴 수 있음, 처음에는 차갑게 보일 수 있음'},
+  {ko:'분석',en:'Analytical',d:'st',desc:'"왜 그런가?"라고 끊임없이 질문합니다. 이유와 원인, 근거를 찾으며, 주장이나 이론을 뒷받침하는 데이터와 증거를 요구합니다. 감정이나 직관보다 논리와 사실에 기반한 결정을 선호하며, 복잡한 상황의 본질을 꿰뚫어 봅니다.',pros:'정확한 판단, 근거 기반 의사결정, 논리적 설득력',cons:'분석이 길어져 결정 지연, 직관을 무시해 기회를 놓칠 수 있음'},
+  {ko:'맥락',en:'Context',d:'st',desc:'현재를 이해하기 위해 과거를 돌아봅니다. 역사를 연구하고 패턴을 찾으며, 오늘의 결정이 과거 경험에 의해 어떻게 형성되었는지 이해합니다. 이 관점이 더 나은 미래를 만들기 위한 현명한 결정을 내리도록 돕습니다.',pros:'깊은 이해력, 실수 예방, 풍부한 경험 활용',cons:'과거에 집착해 변화 거부, 새로운 시도에 저항할 수 있음'},
+  {ko:'미래지향',en:'Futuristic',d:'st',desc:'"만약 ~이 된다면 어떨까?"라는 질문에서 영감을 얻습니다. 미래의 가능성을 선명하게 그릴 수 있으며, 이 비전이 현재의 어려움을 극복하는 힘이 됩니다. 팀에 더 나은 미래의 모습을 보여주어 희망과 방향감을 제공합니다.',pros:'강력한 비전 제시, 혁신 추구, 팀에 희망 부여',cons:'현재 실무에 집중 어려움, 현실성 없는 목표를 설정할 수 있음'},
+  {ko:'착상',en:'Ideation',d:'st',desc:'아이디어에 매력을 느낍니다. 겉으로는 달라 보이는 현상들 사이의 연결고리를 발견할 때 흥분됩니다. 이 능력이 새로운 관점으로 익숙한 문제를 바라보게 하며, 혁신적인 해결책을 제시합니다.',pros:'창의성, 혁신적 발상, 다양한 관점 제공',cons:'실행보다 아이디어에 머무를 수 있음, 아이디어가 너무 많아 집중력 저하'},
+  {ko:'수집',en:'Input',d:'st',desc:'수집하는 것을 좋아합니다. 정보, 아이디어, 유물, 심지어 사람들을 수집합니다. 무엇이든 언젠가 유용할 것이라고 생각하기 때문에 버리는 것이 어렵습니다. 다양한 분야의 지식이 쌓이면서 팀에 귀중한 자원이 됩니다.',pros:'풍부한 지식, 다양한 관점, 유용한 정보 제공',cons:'필요 이상 정보 수집으로 정리 어려움, 결정 전 너무 많은 정보를 원함'},
+  {ko:'사색',en:'Intellection',d:'st',desc:'지적인 활동을 즐깁니다. 생각하기를 좋아하며, 특히 혼자 생각하는 시간을 소중히 여깁니다. 깊이 있는 토론을 통해 아이디어를 탐색하고, 복잡한 문제를 깊이 있게 이해하여 통찰력 있는 해결책을 제시합니다.',pros:'깊은 통찰력, 복잡한 문제 해결, 철학적 사고',cons:'혼자 시간 필요로 팀과 단절 가능, 행동보다 생각에 더 많은 시간 소요'},
+  {ko:'학습',en:'Learner',d:'st',desc:'배우고 계속해서 발전하고 싶어합니다. 특정 주제보다 배움의 과정 자체에서 에너지를 얻습니다. 초보자에서 역량을 갖춘 수준으로 이동하는 과정이 스릴을 줍니다. 빠르게 변화하는 환경에서 새로운 기술을 습득하는 데 탁월합니다.',pros:'빠른 습득력, 지속적 발전, 변화 환경 적응',cons:'실행보다 학습에 더 많은 시간, 하나에 집중하기 어려울 수 있음'},
+  {ko:'전략',en:'Strategic',d:'st',desc:'복잡한 상황을 빠르게 분류하고 최선의 경로를 파악하는 능력이 있습니다. 이 재능은 단순히 배울 수 있는 기술이 아닌 독특한 사고방식입니다. 여러 대안적 시나리오를 고려하고 "만약 이렇게 된다면?"이라고 지속적으로 물으며 최적 경로를 선택합니다.',pros:'탁월한 문제 해결, 방향 설정, 복잡한 상황 단순화',cons:'큰 그림에 집중해 세부사항 놓칠 수 있음, 혼자 결정하려는 경향'},
 ];
 
 const DOM = {
@@ -450,26 +450,22 @@ function openStrModal(ko, rank){
   const memoKey='strMemo_'+curPerson+'_'+ko;
   const saved=localStorage.getItem(memoKey)||'';
   document.getElementById('str-modal-content').innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <div style="width:44px;height:44px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:${dom.color}">${rank}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:36px;height:36px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${dom.color};flex-shrink:0">${rank}</div>
       <div>
-        <div style="font-size:20px;font-weight:800">${ko}</div>
-        <div style="font-size:13px;color:var(--text3)">${s?.en||''} · <span style="color:${dom.color}">${dom.name}</span></div>
+        <div style="font-size:17px;font-weight:800">${ko} <span style="font-size:12px;font-weight:400;color:var(--text3)">${s?.en||''}</span></div>
+        <span style="font-size:11px;color:${dom.color}">${dom.name}</span>
       </div>
     </div>
-    <div style="background:${dom.bg};border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="font-size:13px;color:var(--text2);line-height:1.7">${s?.desc||''}</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;padding:10px;background:${dom.bg};border-radius:10px">${s?.desc||''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div class="pros-box" style="padding:8px 10px"><div class="box-label" style="margin-bottom:4px">✅ 강점</div><div class="box-content" style="font-size:11px">${s?.pros||''}</div></div>
+      <div class="cons-box" style="padding:8px 10px"><div class="box-label" style="margin-bottom:4px">⚠️ 주의</div><div class="box-content" style="font-size:11px">${s?.cons||''}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-      <div class="pros-box"><div class="box-label">✅ 강점</div><div class="box-content">${s?.pros||''}</div></div>
-      <div class="cons-box"><div class="box-label">⚠️ 주의</div><div class="box-content">${s?.cons||''}</div></div>
-    </div>
-    <div style="margin-bottom:8px">
-      <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px">📝 나만의 메모 (교육 자료 내용 입력)</div>
-      <textarea id="str-memo" rows="5" placeholder="갤럽 교육에서 받은 자료 내용, 느낀 점 등을 자유롭게 입력하세요..."
-        style="width:100%;background:var(--bg);border:1px solid var(--surface2);border-radius:10px;padding:12px;color:var(--text);font-size:13px;line-height:1.6;resize:vertical">${saved}</textarea>
-    </div>
-    <button onclick="saveMemo('${ko}')" style="width:100%;padding:12px;background:#22c55e;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;cursor:pointer">💾 메모 저장</button>
+    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:4px">📝 나만의 메모</div>
+    <textarea id="str-memo" rows="3" placeholder="갤럽 교육 자료 내용, 느낀 점..."
+      style="width:100%;background:var(--bg);border:1px solid var(--surface2);border-radius:10px;padding:10px;color:var(--text);font-size:12px;line-height:1.5;resize:none;margin-bottom:8px">${saved}</textarea>
+    <button onclick="saveMemo('${ko}')" style="width:100%;padding:10px;background:#22c55e;border:none;border-radius:10px;color:#000;font-size:13px;font-weight:700;cursor:pointer">💾 메모 저장</button>
   `;
   document.getElementById('str-modal').classList.add('open');
 }
