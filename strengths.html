@@ -158,13 +158,13 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
     <button class="edit-btn" style="margin:0;font-size:12px;padding:6px 12px;" onclick="openInputCur()">✏️ 수정</button>
   </header>
   <!-- 프로필 요약 -->
-  <div id="prof-hero-bar" style="background:var(--surface);padding:12px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--surface2);">
-    <div id="prof-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;"></div>
+  <div id="prof-hero-bar" style="background:var(--surface);padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--surface2);">
+    <div id="prof-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;"></div>
     <div style="flex:1">
-      <div id="prof-name-bar" style="font-size:17px;font-weight:800;"></div>
-      <div id="prof-sub-bar" style="font-size:12px;color:var(--text3);margin-top:2px;"></div>
+      <div id="prof-name-bar" style="font-size:15px;font-weight:800;"></div>
+      <div id="prof-sub-bar" style="font-size:11px;color:var(--text3);margin-top:1px;"></div>
     </div>
-    <div id="prof-domain-pills" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:140px;"></div>
+    <div id="prof-domain-pills" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:130px;"></div>
   </div>
   <!-- 탭 -->
   <div style="display:flex;border-bottom:1px solid var(--surface);">
@@ -686,53 +686,55 @@ function openProfile(name){
 
   const cardsHtml=d.top5.map((ko,i)=>{
     const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
-    return`<div class="str-card" style="background:${dom.bg};cursor:pointer" onclick="openStrModal('${ko}',${i+1})">
-      <div class="str-card-top">
-        <div class="rank-circle" style="color:${dom.color}">${i+1}</div>
+    return`<div class="str-card" style="background:${dom.bg};cursor:pointer;margin-bottom:6px" onclick="openStrModal('${ko}',${i+1})">
+      <div class="str-card-top" style="padding:10px 14px">
+        <div class="rank-circle" style="color:${dom.color};width:30px;height:30px;font-size:13px">${i+1}</div>
         <div class="sc-info">
-          <div class="sc-ko">${ko}</div><div class="sc-en">${s?.en||''}</div>
+          <div class="sc-ko" style="font-size:14px">${ko}</div><div class="sc-en">${s?.en||''}</div>
           <span class="sc-domain" style="color:${dom.color}">${dom.name}</span>
         </div>
-        <span style="color:${dom.color};font-size:18px">›</span>
+        <span style="color:${dom.color};font-size:16px">›</span>
       </div>
     </div>`;
   }).join('');
 
-  // 인사이트 카드
+  // 인사이트 카드 (컴팩트)
   const insightHtml=`
-  <div style="background:linear-gradient(135deg,${DOM[myDom].bg},var(--surface));border:1.5px solid ${DOM[myDom].color}44;border-radius:14px;padding:14px;margin-bottom:12px">
-    <div style="font-size:11px;color:${DOM[myDom].color};font-weight:700;margin-bottom:6px">💡 강점 유형 진단</div>
-    <div style="font-size:18px;font-weight:800;margin-bottom:6px">${myType.emoji} ${myType.label}</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.6">${myType.desc}</div>
+  <div style="background:linear-gradient(135deg,${DOM[myDom].bg},var(--surface));border:1.5px solid ${DOM[myDom].color}44;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+    <div style="font-size:26px;flex-shrink:0">${myType.emoji}</div>
+    <div>
+      <div style="font-size:10px;color:${DOM[myDom].color};font-weight:700;margin-bottom:2px">💡 강점 유형</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:2px">${myType.label}</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.4">${myType.desc}</div>
+    </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-    <div style="background:var(--surface);border-radius:12px;padding:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">🎯 핵심 강점 도메인</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr${myPartner?' 1fr':''};gap:6px;margin-bottom:8px">
+    <div style="background:var(--surface);border-radius:10px;padding:8px 10px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px">🎯 도메인</div>
       ${Object.entries(cnt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
-        `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:${DOM[k].color};flex-shrink:0"></div>
-          <span style="font-size:11px;color:${DOM[k].color};font-weight:600">${DOM[k].name}</span>
-          <span style="font-size:10px;color:var(--text3)">${v}개</span>
+        `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+          <div style="width:5px;height:5px;border-radius:50%;background:${DOM[k].color};flex-shrink:0"></div>
+          <span style="font-size:10px;color:${DOM[k].color};font-weight:600">${DOM[k].name} ${v}</span>
         </div>`).join('')}
     </div>
-    <div style="background:var(--surface);border-radius:12px;padding:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">⚠️ 사각지대</div>
+    <div style="background:var(--surface);border-radius:10px;padding:8px 10px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px">⚠️ 사각지대</div>
       ${myBlind.length===0
-        ?`<div style="font-size:11px;color:#22c55e;font-weight:600">✅ 4개 영역 모두 보유! 균형잡힌 강점</div>`
-        :myBlind.map(d=>`<div style="font-size:11px;color:#ef4444;margin-bottom:4px">• ${DOM[d].name} 없음</div>`).join('')
+        ?`<div style="font-size:10px;color:#22c55e;font-weight:600">✅ 4개 균형</div>`
+        :myBlind.map(d=>`<div style="font-size:10px;color:#ef4444;margin-bottom:2px">• ${DOM[d].name}</div>`).join('')
       }
     </div>
-  </div>
-  ${myPartner?`<div style="background:var(--surface);border-radius:12px;padding:12px;margin-bottom:12px">
-    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">🔗 팀 내 최적 시너지 파트너</div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:34px;height:34px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">${myPartner.name[0]}</div>
-      <div><div style="font-size:14px;font-weight:700">${myPartner.name}</div>
-      <div style="font-size:11px;color:var(--text3)">서로 다른 강점으로 ${myPartner.score}개 영역 보완</div></div>
-    </div>
-  </div>`:''}`;
+    ${myPartner?`<div style="background:var(--surface);border-radius:10px;padding:8px 10px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px">🔗 파트너</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${myPartner.name[0]}</div>
+        <div><div style="font-size:11px;font-weight:700">${myPartner.name}</div>
+        <div style="font-size:9px;color:var(--text3)">${myPartner.score}개 보완</div></div>
+      </div>
+    </div>`:''}
+  </div>`;
 
-  document.getElementById('prof-str').innerHTML=`<div style="padding:14px 18px 80px">${insightHtml}${cardsHtml}</div>`;
+  document.getElementById('prof-str').innerHTML=`<div style="padding:10px 14px 60px">${insightHtml}${cardsHtml}</div>`;
 
   // 차트 탭
   document.getElementById('prof-chart').innerHTML=`<div style="padding:14px 18px 80px">
