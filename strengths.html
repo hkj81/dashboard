@@ -159,22 +159,13 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
     <div class="hd-title" id="prof-hd">프로필</div>
     <button class="edit-btn" style="margin:0;font-size:12px;padding:6px 12px;" onclick="openInputCur()">✏️ 수정</button>
   </header>
-  <!-- 프로필 요약 -->
-  <div id="prof-hero-bar" style="background:var(--surface);padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--surface2);">
-    <div id="prof-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;"></div>
-    <div style="flex:1">
-      <div id="prof-name-bar" style="font-size:15px;font-weight:800;"></div>
-      <div id="prof-sub-bar" style="font-size:11px;color:var(--text3);margin-top:1px;"></div>
-    </div>
-    <div id="prof-domain-pills" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:130px;"></div>
-  </div>
   <!-- 탭 -->
   <div style="display:flex;border-bottom:1px solid var(--surface);">
     <button class="prof-tab on" id="ptab-str" onclick="switchPTab('str')">💪 강점</button>
     <button class="prof-tab" id="ptab-chart" onclick="switchPTab('chart')">📊 차트</button>
     <button class="prof-tab" id="ptab-ai" onclick="switchPTab('ai')">🤖 AI분석</button>
   </div>
-  <!-- 탭 컨텐츠 -->
+  <!-- 탭 컨텐츠 (프로필 카드 포함) -->
   <div class="scroll" id="prof-str"></div>
   <div class="scroll" id="prof-chart" style="display:none"></div>
   <div class="scroll" id="prof-ai" style="display:none;padding:14px 18px 100px;"></div>
@@ -693,19 +684,24 @@ function openProfile(name){
   const team=TEAMS.find(t=>t.leader===name||t.members.includes(name));
   const role=team?.leader===name?'팀장':'팀원';
 
-  // 상단 요약바
   document.getElementById('prof-hd').textContent=name;
-  document.getElementById('prof-avatar').textContent=name[0];
-  document.getElementById('prof-name-bar').textContent=name;
-  document.getElementById('prof-sub-bar').textContent=`${team?.id||''} · ${role} · ${d.updatedAt||''}`;
 
-  // 도메인 요약 pills
+  // 도메인 카운트
   const cnt={ex:0,in:0,re:0,st:0};
   d.top5.forEach(ko=>{const s=S.find(x=>x.ko===ko);if(s)cnt[s.d]++;});
-  document.getElementById('prof-domain-pills').innerHTML=
-    Object.entries(cnt).filter(([,v])=>v>0).map(([k,v])=>
-      `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${DOM[k].bg};color:${DOM[k].color};font-weight:700">${DOM[k].name} ${v}</span>`
-    ).join('');
+
+  // 프로필 카드 (첫 번째 flex:1 아이템)
+  const domPills=Object.entries(cnt).filter(([,v])=>v>0).map(([k,v])=>
+    `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${DOM[k].bg};color:${DOM[k].color};font-weight:700">${DOM[k].name} ${v}</span>`
+  ).join('');
+  const profileCard=`<div style="flex:1;min-height:0;background:var(--surface);border-radius:10px;display:flex;align-items:center;padding:0 14px;gap:12px;overflow:hidden">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0">${name[0]}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:15px;font-weight:800">${name}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:1px">${team?.id||''} · ${role} · ${d.updatedAt||''}</div>
+    </div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:140px">${domPills}</div>
+  </div>`;
 
   // 강점 탭 - 인사이트 섹션 계산
   const myDom=getDominantDomain(d.top5);
@@ -754,7 +750,7 @@ function openProfile(name){
     </div>`:''}
   </div>`;
 
-  document.getElementById('prof-str').innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:5px">${insightHtml}${cardsHtml}</div>`;
+  document.getElementById('prof-str').innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:5px">${profileCard}${insightHtml}${cardsHtml}</div>`;
 
   // 차트 탭
   document.getElementById('prof-chart').innerHTML=`<div style="padding:14px 18px 80px">
