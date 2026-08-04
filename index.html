@@ -3,1016 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>유통기한 관리 대시보드</title>
+<title>태전그룹 · 도매 시스템</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Apple SD Gothic Neo','Malgun Gothic',Arial,sans-serif;background:#f0f2f5;color:#222}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#0f172a;
+    color:#f1f5f9;
+    font-family:'Segoe UI',sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  header {
+    padding:28px 24px 16px;
+    border-bottom:1px solid #1e293b;
+  }
+  .header-sub { font-size:12px; color:#64748b; letter-spacing:1px; margin-bottom:4px; }
+  .header-title { font-size:22px; font-weight:800; color:#f1f5f9; }
 
-/* ── 로딩 ── */
-#loadingSection{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
-.spinner{width:44px;height:44px;border:4px solid #e0e8f0;border-top-color:#1a3a5c;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:.95rem;color:#888;font-weight:600}
+  .hero {
+    padding:24px 24px 8px;
+    text-align:center;
+  }
+  .hero-text { font-size:14px; color:#64748b; line-height:1.6; }
 
-/* ── 업로드 화면 ── */
-#uploadSection{min-height:100vh;display:none;align-items:center;justify-content:center;padding:40px 20px}
-.upload-card{background:#fff;border-radius:20px;padding:48px 40px;max-width:680px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.10)}
-.upload-card h1{font-size:1.4rem;font-weight:800;color:#1a3a5c;margin-bottom:8px}
-.upload-card .subtitle{font-size:.88rem;color:#888;margin-bottom:32px}
-.file-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:28px}
-.file-box{border:2px dashed #ccd6e0;border-radius:12px;padding:20px 14px;text-align:center;cursor:pointer;transition:.2s;position:relative}
-.file-box:hover{border-color:#1a3a5c;background:#f5f8fb}
-.file-box.has-file{border-color:#43a047;border-style:solid;background:#f1f8f1}
-.file-box .icon{font-size:1.8rem;margin-bottom:8px}
-.file-box .label{font-size:.78rem;font-weight:700;color:#555;margin-bottom:6px}
-.file-box .fname{font-size:.72rem;color:#43a047;font-weight:600;word-break:break-all;display:none}
-.file-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.file-box.drag-over{border-color:#1a3a5c;background:#e8f0fa}
-.btn-analyze{width:100%;padding:15px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:1.05rem;font-weight:800;cursor:pointer;transition:.2s}
-.btn-analyze:hover{background:#0f2a45}
-.btn-analyze:disabled{background:#ccc;cursor:not-allowed}
-#progressMsg{margin-top:16px;text-align:center;font-size:.88rem;color:#1a3a5c;font-weight:600;display:none}
-.tip{background:#f0f4f8;border-radius:8px;padding:12px 14px;font-size:.78rem;color:#666;margin-top:20px;line-height:1.7}
-.tip strong{color:#1a3a5c}
+  .grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    padding:16px 20px;
+    flex:1;
+  }
+  .card {
+    background:#1e293b;
+    border-radius:20px;
+    padding:24px 16px;
+    text-align:center;
+    cursor:pointer;
+    text-decoration:none;
+    color:#f1f5f9;
+    transition:transform .15s, background .15s;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    border:2px solid transparent;
+  }
+  .card:hover, .card:active {
+    transform:scale(1.03);
+    border-color:#334155;
+  }
+  .card-icon { font-size:38px; }
+  .card-title { font-size:15px; font-weight:700; }
+  .card-desc { font-size:12px; color:#64748b; line-height:1.5; }
+  .card-badge {
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:20px;
+    font-weight:600;
+    margin-top:4px;
+  }
 
-/* ── 이름 선택 화면 ── */
-#nameSection{min-height:100vh;display:none;align-items:center;justify-content:center;padding:40px 20px}
-.name-card{background:#fff;border-radius:20px;padding:48px 40px;max-width:480px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.10)}
-.name-card h2{font-size:1.25rem;font-weight:800;color:#1a3a5c;margin-bottom:6px;text-align:center}
-.name-card .name-sub{font-size:.85rem;color:#888;margin-bottom:28px;text-align:center}
-.name-list{display:flex;flex-direction:column;gap:10px}
-.name-btn{padding:16px 20px;background:#f5f8fb;border:2px solid #e0e8f0;border-radius:12px;font-size:1rem;font-weight:700;color:#1a3a5c;cursor:pointer;text-align:left;transition:.2s;display:flex;justify-content:space-between;align-items:center;width:100%}
-.name-btn:hover{background:#e8f0fa;border-color:#1a3a5c;transform:translateX(4px)}
-.name-btn .name-cnt{font-size:.78rem;color:#888;font-weight:400}
-.name-footer{margin-top:24px;display:flex;flex-direction:column;gap:10px;align-items:center}
-.name-updated{font-size:.78rem;color:#bbb}
-.btn-upload-new{background:none;border:none;color:#aaa;font-size:.83rem;cursor:pointer;text-decoration:underline}
-.btn-upload-new:hover{color:#555}
-.btn-save-github{width:100%;padding:14px;background:#2ea44f;color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;transition:.2s;margin-top:4px}
-.btn-save-github:hover{background:#22863a}
-.btn-save-github:disabled{background:#94d3a2;cursor:not-allowed}
+  .card-expiry { border-top:3px solid #f59e0b; }
+  .card-expiry .card-badge { background:#f59e0b22; color:#f59e0b; }
 
-/* ── 대시보드 ── */
-header{background:#1a3a5c;color:#fff;padding:16px 32px;display:flex;justify-content:space-between;align-items:center}
-header h1{font-size:1.25rem;font-weight:700}
-.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.header-right span{font-size:.82rem;opacity:.75}
-.btn-change{padding:7px 14px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;white-space:nowrap}
-.btn-change:hover{background:rgba(255,255,255,0.25)}
-.container{max-width:1400px;margin:0 auto;padding:24px 20px}
-.recall-box{background:#fff;border-radius:12px;padding:22px 24px;box-shadow:0 1px 6px rgba(0,0,0,.08);margin-bottom:22px;border-left:5px solid #7b1fa2}
-.recall-box h2{font-size:1.05rem;font-weight:700;color:#4a148c;margin-bottom:4px}
-.recall-box .desc{font-size:.82rem;color:#888;margin-bottom:16px}
-.recall-input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.recall-input-row input{padding:9px 14px;border:2px solid #ce93d8;border-radius:8px;font-size:.95rem;width:420px;outline:none;transition:.2s}
-.recall-input-row input:focus{border-color:#7b1fa2}
-.recall-input-row select{padding:9px 12px;border:2px solid #ce93d8;border-radius:8px;font-size:.88rem;outline:none}
-.btn-search{padding:9px 22px;background:#7b1fa2;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700}
-.btn-search:hover{background:#6a1b9a}
-.btn-clear{padding:9px 14px;background:#f3e5f5;color:#7b1fa2;border:none;border-radius:8px;cursor:pointer;font-size:.88rem}
-.recall-result{display:none}
-.recall-summary{background:#f3e5f5;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:.9rem;color:#4a148c;font-weight:600}
-.recall-table-wrap{max-height:360px;overflow-y:auto;border:1px solid #e1bee7;border-radius:8px}
-.table-section{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.08)}
-.section-title{font-size:1.0rem;font-weight:700;color:#1a3a5c;margin-bottom:14px}
-.filters{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.filters select,.filters input{padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:.88rem;outline:none}
-.filters input{width:200px}
-.filter-btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:1.26rem;font-weight:600}
-.filter-btn.all{background:#1a3a5c;color:#fff}
-.filter-btn.red{background:#ffebee;color:#c62828}
-.filter-btn.yellow{background:#fff8e1;color:#f57f17}
-.filter-btn.green{background:#e8f5e9;color:#2e7d32}
-.filter-btn.active{box-shadow:0 0 0 2px #1a3a5c}
-.count-label{font-size:.8rem;color:#888;margin-left:auto}
-.table-wrap{max-height:440px;overflow-y:auto;border:1px solid #eee;border-radius:8px}
-table{width:100%;border-collapse:collapse;font-size:.87rem}
-thead th{background:#1a3a5c;color:#fff;padding:10px 12px;text-align:left;position:sticky;top:0;z-index:2}
-.recall-table-wrap table thead th{background:#6a1b9a}
-tbody tr:nth-child(even){background:#f8f9fb}
-tbody tr:hover{background:#eef2f7}
-tbody td{padding:9px 12px;border-bottom:1px solid #eee}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.76rem;font-weight:700}
-.badge.반품불가{background:#ffebee;color:#c62828}
-.badge.향정{background:#fff8e1;color:#f57f17}
-.badge.일반매출{background:#e8f5e9;color:#2e7d32}
-.days-chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.8rem;font-weight:700}
-.days-urgent{background:#ffcdd2;color:#b71c1c}
-.days-warn{background:#fff9c4;color:#827717}
-.days-ok{background:#e8f5e9;color:#1b5e20}
-.qty-badge{background:#ede7f6;color:#4a148c;padding:2px 8px;border-radius:8px;font-weight:700;font-size:.82rem}
-.no-result{text-align:center;padding:32px;color:#aaa;font-size:.9rem}
-.btn-del{padding:3px 10px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:700;white-space:nowrap}
-.btn-del:hover{background:#ffe0b2}
-.hidden-info{font-size:.78rem;color:#999;margin-left:4px}
-.btn-restore{padding:4px 10px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:.78rem;display:none}
-.btn-restore:hover{background:#eee}
-/* 모달 공통 */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal-box{background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:560px;width:90%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.18)}
-.modal-box h3{font-size:1rem;font-weight:700;color:#1a3a5c;margin-bottom:4px}
-.modal-box .modal-sub{font-size:.8rem;color:#888;margin-bottom:14px}
-.modal-list{flex:1;overflow-y:auto;border:1px solid #eee;border-radius:8px;margin-bottom:14px}
-.modal-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:.84rem}
-.modal-item:last-child{border-bottom:none}
-.modal-item:hover{background:#fafafa}
-.modal-item label{cursor:pointer;flex:1;line-height:1.4}
-.modal-item .mi-badge{font-size:.7rem;padding:1px 6px;border-radius:6px;font-weight:700;flex-shrink:0}
-.modal-footer{display:flex;gap:8px;justify-content:flex-end}
-.modal-footer button{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:700}
-.btn-modal-all{background:#1a3a5c;color:#fff;border:none}
-.btn-modal-sel{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
-.btn-modal-cancel{background:#f5f5f5;color:#666;border:1px solid #ddd}
-.modal-selall{font-size:.78rem;color:#1a3a5c;cursor:pointer;text-decoration:underline;margin-right:auto;align-self:center}
-/* 토큰 모달 */
-#tokenModal .modal-box{max-width:420px;max-height:none}
-.token-input{width:100%;padding:10px 12px;border:2px solid #ccd6e0;border-radius:8px;font-size:.9rem;margin:12px 0;outline:none;font-family:monospace}
-.token-input:focus{border-color:#1a3a5c}
-.token-help{font-size:.78rem;color:#888;line-height:1.6;margin-bottom:16px}
-.token-help a{color:#1a3a5c}
-.btn-token-save{width:100%;padding:12px;background:#2ea44f;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer}
-.btn-token-cancel{width:100%;padding:10px;background:#f5f5f5;color:#666;border:1px solid #ddd;border-radius:8px;font-size:.9rem;cursor:pointer;margin-top:8px}
+  .card-strengths { border-top:3px solid #8b5cf6; }
+  .card-strengths .card-badge { background:#8b5cf622; color:#8b5cf6; }
+
+  .card-pill { border-top:3px solid #22c55e; }
+  .card-pill .card-badge { background:#22c55e22; color:#22c55e; }
+
+  .card-full {
+    grid-column: span 2;
+  }
+
+  footer {
+    text-align:center;
+    padding:20px;
+    font-size:12px;
+    color:#334155;
+  }
 </style>
 </head>
 <body>
 
-<!-- ── 로딩 ── -->
-<div id="loadingSection" style="display:flex">
-  <div class="spinner"></div>
-  <div class="loading-text">데이터 불러오는 중...</div>
+<header>
+  <div class="header-sub">태전그룹 · 도매 시스템</div>
+  <div class="header-title">📋 메인 메뉴</div>
+</header>
+
+<div class="hero">
+  <div class="hero-text">원하는 기능을 선택하세요</div>
 </div>
 
-<!-- ── 업로드 화면 (관리자용) ── -->
-<div id="uploadSection">
-  <div class="upload-card">
-    <h1>📊 유통기한 관리 대시보드</h1>
-    <p class="subtitle">출고현황조회 파일을 업로드하고 분석 후 팀원들과 공유하세요.</p>
-    <div style="margin-bottom:20px;position:relative">
-      <label style="font-size:.85rem;font-weight:700;color:#555;display:block;margin-bottom:6px">👤 내 이름 (담당자명)</label>
-      <input type="text" id="myName" placeholder="클릭하면 저장된 이름이 표시됩니다" autocomplete="new-password"
-        style="width:100%;padding:10px 14px;border:2px solid #ccd6e0;border-radius:10px;font-size:.95rem;outline:none;font-family:inherit;cursor:pointer"
-        onfocus="showNameDropdown(false)" oninput="showNameDropdown(true)">
-      <div id="nameDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:2px solid #1a3a5c;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;margin-top:2px;overflow:hidden"></div>
-      <div style="font-size:.75rem;color:#aaa;margin-top:4px">기존 팀원 데이터는 유지되고 내 데이터만 업데이트됩니다.</div>
-    </div>
-    <div class="file-grid">
-      <div class="file-box" id="box_매출">
-        <div class="icon">📄</div>
-        <div class="label">① 매출 파일</div>
-        <div class="fname" id="name_매출"></div>
-        <input type="file" id="file_매출" accept=".xls,.csv,.xlsx" onchange="onFile(this,'매출')">
-      </div>
-      <div class="file-box" id="box_반품불가">
-        <div class="icon">🔴</div>
-        <div class="label">② 반품불가 파일</div>
-        <div class="fname" id="name_반품불가"></div>
-        <input type="file" id="file_반품불가" accept=".xls,.csv,.xlsx" onchange="onFile(this,'반품불가')">
-      </div>
-      <div class="file-box" id="box_향정">
-        <div class="icon">🟡</div>
-        <div class="label">③ 향정 파일</div>
-        <div class="fname" id="name_향정"></div>
-        <input type="file" id="file_향정" accept=".xls,.csv,.xlsx" onchange="onFile(this,'향정')">
-      </div>
-    </div>
-    <button class="btn-analyze" id="btnAnalyze" onclick="doAnalysis()" disabled>분석 시작 ▶</button>
-    <div id="btnBackWrap" style="display:none;text-align:center;margin-top:12px">
-      <button onclick="showNameSelection()" style="background:none;border:none;color:#aaa;font-size:.83rem;cursor:pointer;text-decoration:underline">← 이름 선택으로 돌아가기</button>
-    </div>
-    <div id="progressMsg">⏳ 분석 중입니다. 잠시만 기다려주세요...</div>
-    <div class="tip">
-      <strong>사용법:</strong> 영업지원시스템 → 출고현황조회 → 매출 / 반품불가 / 향정 각각 저장 후 업로드.<br>
-      분석 후 <strong>☁️ GitHub에 저장</strong>하면 팀원들이 이 주소에서 바로 확인 가능합니다.
-    </div>
-  </div>
+<div class="grid">
+
+  <a class="card card-expiry" href="expiry.html">
+    <div class="card-icon">⏰</div>
+    <div class="card-title">유통기한 임박</div>
+    <div class="card-desc">제품 유통기한<br>조회 및 관리</div>
+    <div class="card-badge">재고 관리</div>
+  </a>
+
+  <a class="card card-strengths" href="strengths.html">
+    <div class="card-icon">💪</div>
+    <div class="card-title">갤럽 강점 분석</div>
+    <div class="card-desc">CliftonStrengths<br>팀 강점 시각화</div>
+    <div class="card-badge">팀 분석</div>
+  </a>
+
+  <a class="card card-pill card-full" href="pill-counter.html">
+    <div class="card-icon">💊</div>
+    <div class="card-title">알약 카운터</div>
+    <div class="card-desc">AI 카메라로 알약 개수 자동 측정 · 누적 합산</div>
+    <div class="card-badge">AI 도구</div>
+  </a>
+
 </div>
 
-<!-- ── 이름 선택 화면 ── -->
-<div id="nameSection">
-  <div class="name-card">
-    <h2>👤 담당자를 선택하세요</h2>
-    <p class="name-sub">본인 이름을 클릭하면 데이터를 확인할 수 있습니다.</p>
-    <div class="name-list" id="nameList"></div>
-    <div class="name-footer">
-      <span class="name-updated" id="nameUpdated"></span>
-      <button id="btnSaveGithub" class="btn-save-github" onclick="saveToGitHub()" style="display:none">☁️ GitHub에 저장 (팀원 공유)</button>
-      <button class="btn-upload-new" onclick="goToUpload()">← 새 파일 업로드</button>
-    </div>
-  </div>
-</div>
+<footer>태전그룹 도매 시스템 · 희망-실천 4기 2팀</footer>
 
-<!-- ── 대시보드 ── -->
-<div id="dashboardSection" style="display:none">
-  <header>
-    <h1>📊 유통기한 임박 &amp; 회수의약품 대시보드</h1>
-    <div class="header-right">
-      <span id="headerInfo"></span>
-      <button class="btn-change" onclick="goToUpload()">📤 새 파일 업로드</button>
-      <button class="btn-change" onclick="backToNames()" id="btnChangePerson">👤 담당자 변경</button>
-    </div>
-  </header>
-  <div class="container">
-    <div class="table-section" style="margin-bottom:22px">
-      <div class="section-title">📋 유통기한 7개월 이내 품목 현황</div>
-      <div class="filters">
-        <button class="filter-btn all active" id="btn_전체" onclick="setFilter('전체',this)">전체 (<span id="cnt_전체">0</span>)</button>
-        <button class="filter-btn red" id="btn_반품불가" onclick="setFilter('반품불가',this)">🔴 반품불가 (<span id="cnt_반품불가">0</span>)</button>
-        <button class="filter-btn yellow" id="btn_향정" onclick="setFilter('향정',this)">🟡 향정 (<span id="cnt_향정">0</span>)</button>
-        <button class="filter-btn green" id="btn_일반매출" onclick="setFilter('일반매출',this)">🟢 일반매출 (<span id="cnt_일반매출">0</span>)</button>
-        <select id="pharmacyFilter" onchange="renderTable()"><option value="">전체 거래처</option></select>
-        <input type="text" id="searchInput" placeholder="품목명 검색..." oninput="renderTable()">
-        <span class="count-label" id="countLabel"></span>
-        <span class="hidden-info" id="hiddenInfo"></span>
-        <button class="btn-restore" id="btnRestore" onclick="restoreAll()">🔄 삭제 복원</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>거래처명</th><th>상품명</th><th>규격</th><th>일련번호</th><th>유효기한</th><th>잔여일수</th><th>수량</th><th>처리</th></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="recall-box">
-      <h2>🔍 회수의약품 거래처 조회</h2>
-      <div class="desc">복지부 회수 명령 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>
-      <div class="recall-input-row">
-        <select id="searchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>
-        <input type="text" id="recallInput" placeholder="예: 049594 458 600" onkeydown="if(event.key==='Enter')doRecallSearch()">
-        <button class="btn-search" onclick="doRecallSearch()">조회</button>
-        <button class="btn-clear" onclick="clearRecall()">초기화</button>
-      </div>
-      <div class="recall-result" id="recallResult">
-        <div class="recall-summary" id="recallSummary"></div>
-        <div class="recall-table-wrap">
-          <table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>
-          <tbody id="recallTableBody"></tbody></table>
-        </div>
-      </div>
-    </div>
-    <div class="recall-box" style="margin-top:22px">
-      <h2>💊 약가인하 품목 거래처 조회</h2>
-      <div class="desc">약가인하 품목의 코드 또는 품목명을 입력하면 해당 품목을 보유한 거래처를 조회합니다.</div>
-      <div class="recall-input-row">
-        <select id="priceSearchType"><option value="code">코드로 검색</option><option value="name">품목명으로 검색</option></select>
-        <input type="text" id="priceInput" placeholder="예: 049594 458 600" onkeydown="if(event.key==='Enter')doPriceSearch()">
-        <button class="btn-search" onclick="doPriceSearch()">조회</button>
-        <button class="btn-clear" onclick="clearPrice()">초기화</button>
-      </div>
-      <div class="recall-result" id="priceResult">
-        <div class="recall-summary" id="priceSummary"></div>
-        <div class="recall-table-wrap">
-          <table><thead><tr><th>거래처명</th><th>전표일자</th><th>상품명</th><th>규격</th><th>제조번호</th><th>일련번호</th><th>유효기한</th><th>보유수량</th></tr></thead>
-          <tbody id="priceTableBody"></tbody></table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 복원 모달 -->
-<div class="modal-overlay" id="restoreModal">
-  <div class="modal-box">
-    <h3>🔄 숨긴 항목 복원</h3>
-    <p class="modal-sub">복원할 항목을 선택하거나 전체 복원하세요.</p>
-    <div class="modal-list" id="modalList"></div>
-    <div class="modal-footer">
-      <span class="modal-selall" onclick="toggleSelectAll()">전체 선택</span>
-      <button class="btn-modal-cancel" onclick="closeModal()">닫기</button>
-      <button class="btn-modal-sel" onclick="restoreSelected()">선택 복원</button>
-      <button class="btn-modal-all" onclick="restoreAllConfirm()">전체 복원</button>
-    </div>
-  </div>
-</div>
-
-<!-- GitHub 토큰 모달 -->
-<div class="modal-overlay" id="tokenModal">
-  <div class="modal-box">
-    <h3>🔑 GitHub 토큰 설정</h3>
-    <p class="modal-sub">팀원 공유를 위해 GitHub Personal Access Token이 필요합니다.</p>
-    <div class="token-help">
-      1. <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> 접속<br>
-      2. Note: 아무 이름 입력 → Expiration: No expiration<br>
-      3. <strong>repo</strong> 체크 → Generate token<br>
-      4. 생성된 토큰(ghp_로 시작) 복사 후 아래 입력
-    </div>
-    <input type="password" class="token-input" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-    <button class="btn-token-save" onclick="saveToken()">저장하고 공유하기</button>
-    <button class="btn-token-cancel" onclick="closeTokenModal()">취소</button>
-  </div>
-</div>
-
-<script>
-// ── GitHub 설정 ──
-const GH_OWNER = 'hkj81';
-const GH_REPO  = 'dashboard';
-const GH_FILE  = 'data.json';
-const GH_RAW   = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/' + GH_FILE;
-const GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + GH_FILE;
-const GH_BASE  = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO;
-const GH_PERSONS_RAW = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/persons.json';
-function personFileName(n) { return 'data_' + n + '.json'; }
-function personRawUrl(n)   { return 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/data_' + encodeURIComponent(n) + '.json'; }
-
-// ── 전역 데이터 ──
-const files = {매출:null, 반품불가:null, 향정:null};
-window._ALL_IMPARK    = [];
-window._ALL_RECALL_DB = [];
-window._ALL_PERSONS   = [];
-window._IMPARK        = [];
-window._RECALL_DB     = [];
-window._CURRENT_PERSON = '';
-window._FRESH_UPLOAD   = false; // 방금 업로드한 경우
-
-// ── 초기화: 페이지 로드 시 GitHub에서 데이터 가져오기 ──
-window.addEventListener('DOMContentLoaded', initApp);
-
-function b64decode(b64) {
-  var latin1 = atob(b64.replace(/\n/g, ''));
-  var bytes = new Uint8Array(latin1.length);
-  for (var i = 0; i < latin1.length; i++) bytes[i] = latin1.charCodeAt(i);
-  return new TextDecoder('utf-8').decode(bytes);
-}
-
-async function initApp() {
-  showOnly('loadingSection');
-
-  var allImpark = [], allRecall = [], persons = [], latestUpdated = '';
-
-  // ── 1차: 새 포맷 (persons.json + 개인별 파일) ──
-  try {
-    var pResp = await fetch(GH_PERSONS_RAW + '?v=' + Date.now());
-    if (pResp.ok) {
-      var personsData = await pResp.json();
-      persons = personsData.persons || [];
-      latestUpdated = personsData.updated || '';
-      if (persons.length > 0) {
-        await Promise.all(persons.map(async function(name) {
-          try {
-            var r = await fetch(personRawUrl(name) + '?v=' + Date.now());
-            if (r.ok) {
-              var d = await r.json();
-              allImpark = allImpark.concat(d.impark || []);
-              allRecall = allRecall.concat(d.recall || []);
-            }
-          } catch(e) {}
-        }));
-      }
-    }
-  } catch(e) {}
-
-  // ── 2차: 구 포맷 data.json 에서 아직 마이그레이션 안 된 사람 추가 ──
-  try {
-    var rawResp = await fetch(GH_RAW + '?v=' + Date.now());
-    if (rawResp.ok) {
-      var oldData = await rawResp.json();
-      if (oldData && oldData.persons) {
-        var newSet = new Set(persons);
-        var oldPersons = (oldData.persons || []).filter(function(p){ return !newSet.has(p); });
-        if (oldPersons.length > 0) {
-          var oldSet = new Set(oldPersons);
-          allImpark = allImpark.concat((oldData.impark || []).filter(function(r){ return oldSet.has(r.담당자); }));
-          allRecall = allRecall.concat((oldData.recall || []).filter(function(r){ return oldSet.has(r.담당자); }));
-          persons = [...new Set([...persons, ...oldPersons])].sort();
-          if (!latestUpdated) latestUpdated = oldData.updated || '';
-        }
-      }
-    }
-  } catch(e) {}
-
-  if (allImpark.length > 0 || persons.length > 0) {
-    window._ALL_IMPARK    = allImpark;
-    window._ALL_RECALL_DB = allRecall;
-    window._ALL_PERSONS   = persons;
-    document.getElementById('nameUpdated').textContent = latestUpdated ? '최근 업데이트: ' + latestUpdated : '';
-    window._FRESH_UPLOAD = false;
-    showNameSelection();
-    return;
-  }
-
-  // 데이터 없으면 업로드 화면
-  showOnly('uploadSection');
-  var wrap = document.getElementById('btnBackWrap');
-  if (wrap) wrap.style.display = 'none';
-}
-
-// ── 화면 전환 ──
-function showOnly(id) {
-  ['loadingSection','uploadSection','nameSection','dashboardSection'].forEach(function(s) {
-    var el = document.getElementById(s);
-    if (s === id) {
-      el.style.display = (s === 'dashboardSection') ? 'block' : 'flex';
-    } else {
-      el.style.display = 'none';
-    }
-  });
-}
-
-function goToUpload() {
-  showOnly('uploadSection');
-  var wrap = document.getElementById('btnBackWrap');
-  if (wrap) wrap.style.display = (window._ALL_PERSONS && window._ALL_PERSONS.length > 0) ? 'block' : 'none';
-}
-
-function showNameDropdown(filterMode) {
-  var input = document.getElementById('myName');
-  var dropdown = document.getElementById('nameDropdown');
-  var persons = window._ALL_PERSONS || [];
-  if (persons.length === 0) { dropdown.style.display = 'none'; return; }
-  var filtered = filterMode
-    ? persons.filter(function(n){ var q = input.value.trim(); return !q || n.indexOf(q) !== -1; })
-    : persons; // 포커스 시 항상 전체 표시
-  if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
-  dropdown.innerHTML = filtered.map(function(n) {
-    return '<div onmousedown="selectMyName(\'' + n + '\')" style="padding:12px 16px;cursor:pointer;font-size:.95rem;font-weight:600;color:#1a3a5c;border-bottom:1px solid #f0f0f0" onmouseover="this.style.background=\'#f0f5ff\'" onmouseout="this.style.background=\'\'">👤 ' + n + '</div>';
-  }).join('');
-  dropdown.style.display = 'block';
-}
-
-function selectMyName(name) {
-  document.getElementById('myName').value = name;
-  document.getElementById('nameDropdown').style.display = 'none';
-}
-
-document.addEventListener('click', function(e) {
-  var dropdown = document.getElementById('nameDropdown');
-  var input = document.getElementById('myName');
-  if (dropdown && input && !dropdown.contains(e.target) && e.target !== input) {
-    dropdown.style.display = 'none';
-  }
-});
-
-// ── 파일 업로드 ──
-function onFile(input, type) {
-  var f = input.files[0];
-  if (!f) return;
-  files[type] = f;
-  document.getElementById('box_' + type).classList.add('has-file');
-  var el = document.getElementById('name_' + type);
-  el.textContent = f.name;
-  el.style.display = 'block';
-  document.getElementById('btnAnalyze').disabled = !files['매출'];
-}
-
-function readFileEUCKR(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var decoder = new TextDecoder('euc-kr');
-      resolve(decoder.decode(e.target.result));
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function parseTSV(text) {
-  var lines = text.replace(/\r/g, '').split('\n');
-  if (lines.length < 2) return [];
-  var headers = lines[0].split('\t').map(function(h){ return h.trim(); });
-  var rows = [];
-  for (var i = 1; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (!line) continue;
-    var cols = lines[i].split('\t');
-    var row = {};
-    headers.forEach(function(h, j){ row[h] = (cols[j] || '').trim(); });
-    rows.push(row);
-  }
-  return rows;
-}
-
-function parseExp(yymmdd) {
-  if (!yymmdd || yymmdd.length < 6) return null;
-  var yy = parseInt(yymmdd.slice(0,2), 10);
-  var mm = parseInt(yymmdd.slice(2,4), 10);
-  var dd = parseInt(yymmdd.slice(4,6), 10);
-  if (!mm || !dd) return null;
-  return new Date(2000 + yy, mm - 1, dd);
-}
-
-function fmtDate8(s) {
-  if (!s || s.length < 8) return s || '';
-  return s.slice(0,4) + '-' + s.slice(4,6) + '-' + s.slice(6,8);
-}
-
-// ── 분석 ──
-async function doAnalysis() {
-  if (!files['매출']) { alert('매출 파일은 필수입니다.'); return; }
-  document.getElementById('btnAnalyze').disabled = true;
-  document.getElementById('progressMsg').style.display = 'block';
-  await new Promise(function(r){ setTimeout(r, 50); });
-
-  try {
-    var texts = {};
-    for (var type in files) {
-      if (files[type]) texts[type] = await readFileEUCKR(files[type]);
-    }
-    var rowSets = {};
-    for (var t in texts) {
-      rowSets[t] = parseTSV(texts[t]);
-    }
-
-    var today = new Date();
-    today.setHours(0,0,0,0);
-    var cutoff = new Date(today);
-    cutoff.setMonth(cutoff.getMonth() + 7);
-
-    var ALL_IMPARK = [];
-    var typeMap = {매출:'일반매출', 반품불가:'반품불가', 향정:'향정'};
-    for (var tp in rowSets) {
-      var 구분 = typeMap[tp];
-      var groups = {};
-      rowSets[tp].forEach(function(row) {
-        var key = (row['매출처명']||'') + '|' + (row['코드']||'') + '|' + (row['상품명']||'') + '|' + (row['규격']||'') + '|' + (row['유효기한']||'') + '|' + (row['일련번호']||'');
-        if (!groups[key]) {
-          groups[key] = {
-            담당자: row['담당자'] || '',
-            매출처명: row['매출처명'] || '',
-            코드: row['코드'] || '',
-            상품명: row['상품명'] || '',
-            규격: row['규격'] || '',
-            유효기한: row['유효기한'] || '',
-            일련번호: row['일련번호'] || '',
-            수량: 0,
-            구분: 구분
-          };
-        }
-        groups[key].수량 += parseFloat(row['수량'] || 0);
-      });
-      Object.values(groups).forEach(function(item) {
-        if (item.수량 <= 0) return;
-        var expDate = parseExp(item.유효기한);
-        if (!expDate || expDate > cutoff) return;
-        var diffDays = Math.floor((expDate - today) / 86400000);
-        var formatted = expDate.getFullYear() + '-' + String(expDate.getMonth()+1).padStart(2,'0') + '-' + String(expDate.getDate()).padStart(2,'0');
-        ALL_IMPARK.push({
-          담당자: item.담당자,
-          매출처명: item.매출처명,
-          코드: item.코드,
-          상품명: item.상품명,
-          규격: item.규격,
-          유효기한_표시: formatted,
-          일련번호: item.일련번호,
-          수량: item.수량,
-          잔여일수: diffDays,
-          구분: item.구분
-        });
-      });
-    }
-    ALL_IMPARK.sort(function(a,b){ return a.잔여일수 - b.잔여일수 || a.매출처명.localeCompare(b.매출처명); });
-
-    var allRows = [];
-    Object.values(rowSets).forEach(function(rs){ rs.forEach(function(r){ allRows.push(r); }); });
-    var recallGroups = {};
-    allRows.forEach(function(row) {
-      var key = (row['코드']||'') + '|' + (row['상품명']||'') + '|' + (row['규격']||'') + '|' + (row['매출처명']||'') + '|' + (row['일련번호']||'');
-      if (!recallGroups[key]) {
-        recallGroups[key] = {
-          담당자: row['담당자'] || '',
-          코드: row['코드'] || '',
-          상품명: row['상품명'] || '',
-          규격: row['규격'] || '',
-          매출처명: row['매출처명'] || '',
-          전표일자_표시: fmtDate8(row['전표일자'] || ''),
-          제조번호: row['제조번호'] || '',
-          일련번호: row['일련번호'] || '',
-          유효기한: row['유효기한'] || '',
-          수량: 0
-        };
-      }
-      recallGroups[key].수량 += parseFloat(row['수량'] || 0);
-    });
-    var ALL_RECALL_DB = Object.values(recallGroups).filter(function(r){ return r.수량 > 0; });
-
-    // 내 이름 입력 시 담당자 필드 덮어쓰기
-    var myName = document.getElementById('myName') ? document.getElementById('myName').value.trim() : '';
-    if (myName) {
-      ALL_IMPARK.forEach(function(r){ r.담당자 = myName; });
-      ALL_RECALL_DB.forEach(function(r){ r.담당자 = myName; });
-    }
-
-    var persons = [...new Set(ALL_IMPARK.map(function(r){ return r.담당자; }).filter(function(n){ return n; }))].sort();
-    var recallPersons = [...new Set(ALL_RECALL_DB.map(function(r){ return r.담당자; }).filter(function(n){ return n; }))];
-    var allPersons = [...new Set([...persons, ...recallPersons])].sort();
-
-    window._ALL_IMPARK    = ALL_IMPARK;
-    window._ALL_RECALL_DB = ALL_RECALL_DB;
-    window._ALL_PERSONS   = allPersons;
-    window._FRESH_UPLOAD  = true;
-
-    document.getElementById('progressMsg').style.display = 'none';
-    document.getElementById('btnAnalyze').disabled = false;
-
-    // 분석 완료 → 항상 이름 선택 화면 경유 (저장 버튼 노출)
-    if (allPersons.length === 0) {
-      selectPerson(''); // 담당자 정보 없으면 전체 바로 표시
-    } else {
-      showNameSelection(); // 1명이어도 이름 선택 화면 거쳐서 저장 버튼 노출
-    }
-
-  } catch(e) {
-    alert('파일 분석 중 오류가 발생했습니다.\n' + e.message);
-    document.getElementById('btnAnalyze').disabled = false;
-    document.getElementById('progressMsg').style.display = 'none';
-  }
-}
-
-// ── 이름 선택 화면 ──
-function showNameSelection() {
-  var persons = window._ALL_PERSONS;
-  var nameList = document.getElementById('nameList');
-  nameList.innerHTML = persons.map(function(name) {
-    var cnt = window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }).length;
-    return '<button class="name-btn" onclick="selectPerson(\'' + name.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">'
-      + '👤 ' + name
-      + '<span class="name-cnt">유통기한 임박 ' + cnt + '건</span>'
-      + '</button>';
-  }).join('');
-
-  // 방금 업로드한 경우 저장 버튼 표시
-  var btnSave = document.getElementById('btnSaveGithub');
-  btnSave.style.display = window._FRESH_UPLOAD ? 'block' : 'none';
-
-  showOnly('nameSection');
-}
-
-function backToNames() {
-  document.getElementById('dashboardSection').style.display = 'none';
-  showNameSelection();
-}
-
-// ── 담당자 선택 ──
-function selectPerson(name) {
-  window._CURRENT_PERSON = name;
-  window._IMPARK    = name ? window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }) : window._ALL_IMPARK;
-  window._RECALL_DB = name ? window._ALL_RECALL_DB.filter(function(r){ return r.담당자 === name; }) : window._ALL_RECALL_DB;
-
-  var IMPARK = window._IMPARK;
-  var cnt = {전체:IMPARK.length, 반품불가:0, 향정:0, 일반매출:0};
-  IMPARK.forEach(function(r){ cnt[r.구분] = (cnt[r.구분] || 0) + 1; });
-  document.getElementById('cnt_전체').textContent    = cnt.전체;
-  document.getElementById('cnt_반품불가').textContent = cnt.반품불가;
-  document.getElementById('cnt_향정').textContent    = cnt.향정;
-  document.getElementById('cnt_일반매출').textContent  = cnt.일반매출;
-
-  var pharmacies = [...new Set(IMPARK.map(function(r){ return r.매출처명; }))].sort();
-  var sel = document.getElementById('pharmacyFilter');
-  sel.innerHTML = '<option value="">전체 거래처</option>';
-  pharmacies.forEach(function(p) {
-    var o = document.createElement('option');
-    o.value = p; o.textContent = p;
-    sel.appendChild(o);
-  });
-
-  document.getElementById('headerInfo').textContent = (name ? name + ' | ' : '') + '분석일: ' + new Date().toLocaleDateString('ko-KR');
-  document.getElementById('btnChangePerson').style.display = window._ALL_PERSONS.length > 1 ? 'inline-block' : 'none';
-
-  currentFilter = '전체';
-  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('btn_전체').classList.add('active');
-  document.getElementById('searchInput').value = '';
-  clearRecall();
-  clearPrice();
-  renderTable();
-
-  showOnly('dashboardSection');
-}
-
-// ── GitHub 저장 ──
-async function saveToGitHub() {
-  var token = localStorage.getItem('gh_token');
-  if (!token) {
-    document.getElementById('tokenModal').classList.add('open');
-    return;
-  }
-  await doSaveToGitHub(token);
-}
-
-async function doSaveToGitHub(token) {
-  var btn = document.getElementById('btnSaveGithub');
-  btn.textContent = '저장 중...';
-  btn.disabled = true;
-
-  var today = new Date().toISOString().slice(0,10);
-  var authHdr = { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
-
-  try {
-    var myPersons = window._ALL_PERSONS;
-
-    // ── 기존 persons.json 에서 전체 담당자 목록 가져오기 ──
-    var existingPersons = [];
-    try {
-      var pResp = await fetch(GH_PERSONS_RAW + '?v=' + Date.now());
-      if (pResp.ok) { existingPersons = (await pResp.json()).persons || []; }
-    } catch(e) {}
-    var newPersons = [...new Set([...existingPersons, ...myPersons])].sort();
-
-    // ── 저장할 파일 내용 ──
-    // 개인 데이터 파일: impark + recall 모두 포함
-    var personContent = JSON.stringify({
-      updated: today,
-      impark: window._ALL_IMPARK,
-      recall: window._ALL_RECALL_DB
-    });
-    // persons.json 목록 파일
-    var manifestContent = JSON.stringify({ updated: today, persons: newPersons });
-
-    // ── Git Data API (파일 크기 제한 없음) ──
-    // 1. 최신 커밋 SHA
-    var refResp = await fetch(GH_BASE + '/git/refs/heads/main', { headers: authHdr });
-    if (!refResp.ok) throw new Error('브랜치 조회 실패 (' + refResp.status + ')');
-    var latestCommitSha = (await refResp.json()).object.sha;
-
-    // 2. 커밋의 tree SHA
-    var commitResp = await fetch(GH_BASE + '/git/commits/' + latestCommitSha, { headers: authHdr });
-    if (!commitResp.ok) throw new Error('커밋 조회 실패');
-    var baseTreeSha = (await commitResp.json()).tree.sha;
-
-    // 3. Blob 생성 - 개인 데이터
-    var b1 = await fetch(GH_BASE + '/git/blobs', {
-      method: 'POST', headers: authHdr,
-      body: JSON.stringify({ content: personContent, encoding: 'utf-8' })
-    });
-    if (!b1.ok) throw new Error('개인데이터 Blob 실패 (' + b1.status + ')');
-    var blobSha1 = (await b1.json()).sha;
-
-    // 4. Blob 생성 - persons.json
-    var b2 = await fetch(GH_BASE + '/git/blobs', {
-      method: 'POST', headers: authHdr,
-      body: JSON.stringify({ content: manifestContent, encoding: 'utf-8' })
-    });
-    if (!b2.ok) throw new Error('목록 Blob 실패');
-    var blobSha2 = (await b2.json()).sha;
-
-    // 5. Tree 생성 (두 파일 동시 업데이트)
-    var treeEntries = [
-      { path: personFileName(myPersons[0]), mode: '100644', type: 'blob', sha: blobSha1 },
-      { path: 'persons.json', mode: '100644', type: 'blob', sha: blobSha2 }
-    ];
-    var treeResp = await fetch(GH_BASE + '/git/trees', {
-      method: 'POST', headers: authHdr,
-      body: JSON.stringify({ base_tree: baseTreeSha, tree: treeEntries })
-    });
-    if (!treeResp.ok) throw new Error('Tree 생성 실패');
-    var newTreeSha = (await treeResp.json()).sha;
-
-    // 6. 커밋 생성
-    var newCommitResp = await fetch(GH_BASE + '/git/commits', {
-      method: 'POST', headers: authHdr,
-      body: JSON.stringify({ message: '데이터 업데이트 ' + today + ' (' + myPersons.join(', ') + ')', tree: newTreeSha, parents: [latestCommitSha] })
-    });
-    if (!newCommitResp.ok) throw new Error('커밋 생성 실패');
-    var newCommitSha = (await newCommitResp.json()).sha;
-
-    // 7. main 브랜치 업데이트
-    var updateResp = await fetch(GH_BASE + '/git/refs/heads/main', {
-      method: 'PATCH', headers: authHdr,
-      body: JSON.stringify({ sha: newCommitSha })
-    });
-
-    if (updateResp.ok) {
-      window._ALL_PERSONS  = newPersons;
-      window._FRESH_UPLOAD = false;
-      btn.textContent = '✅ 저장 완료!';
-      btn.style.background = '#1a3a5c';
-      document.getElementById('nameUpdated').textContent = '최근 업데이트: ' + today;
-      var nameList = document.getElementById('nameList');
-      nameList.innerHTML = newPersons.map(function(name) {
-        var cnt = window._ALL_IMPARK.filter(function(r){ return r.담당자 === name; }).length;
-        return '<button class="name-btn" onclick="selectPerson(\'' + name.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">'
-          + '👤 ' + name + '<span class="name-cnt">유통기한 임박 ' + cnt + '건</span></button>';
-      }).join('');
-      alert('✅ 저장 완료!\n\n팀원들이 ' + window.location.href + ' 에 접속하면 바로 확인할 수 있습니다.');
-    } else {
-      var err = await updateResp.json().catch(function(){ return {}; });
-      var msg = err.message || updateResp.status;
-      if (updateResp.status === 401) {
-        alert('❌ 토큰이 잘못되었습니다.\n다시 확인해주세요.');
-        localStorage.removeItem('gh_token');
-      } else {
-        alert('❌ 저장 실패: ' + msg);
-      }
-      btn.textContent = '☁️ GitHub에 저장 (팀원 공유)';
-      btn.disabled = false;
-      btn.style.background = '';
-    }
-  } catch(e) {
-    alert('❌ 오류가 발생했습니다: ' + e.message);
-    btn.textContent = '☁️ GitHub에 저장 (팀원 공유)';
-    btn.disabled = false;
-  }
-}
-
-function saveToken() {
-  var t = document.getElementById('tokenInput').value.trim();
-  if (!t) { alert('토큰을 입력하세요.'); return; }
-  localStorage.setItem('gh_token', t);
-  closeTokenModal();
-  doSaveToGitHub(t);
-}
-
-function closeTokenModal() {
-  document.getElementById('tokenModal').classList.remove('open');
-}
-
-// ── 대시보드 함수 ──
-var currentFilter = '전체';
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  renderTable();
-}
-
-function itemKey(r) { return r['매출처명'] + '|' + r['상품명'] + '|' + r['규격'] + '|' + r['유효기한_표시']; }
-
-function loadDeleted() {
-  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
-  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch(e) { return new Set(); }
-}
-function saveDeleted(set) {
-  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
-  localStorage.setItem(key, JSON.stringify([...set]));
-}
-function deleteItem(key) { var del = loadDeleted(); del.add(key); saveDeleted(del); renderTable(); }
-
-function restoreAll() {
-  var del = loadDeleted();
-  if (del.size === 0) return;
-  var IMPARK = window._IMPARK || [];
-  var list = document.getElementById('modalList');
-  var hiddenItems = IMPARK.filter(function(r){ return del.has(itemKey(r)); });
-  var inImpark = new Set(hiddenItems.map(function(r){ return itemKey(r); }));
-  var extraKeys = [...del].filter(function(k){ return !inImpark.has(k); });
-
-  list.innerHTML = [
-    ...hiddenItems.map(function(r) {
-      var k = itemKey(r).replace(/"/g, '&quot;');
-      var bc = r.구분 === '반품불가' ? 'background:#ffebee;color:#c62828' : r.구분 === '향정' ? 'background:#fff8e1;color:#f57f17' : 'background:#e8f5e9;color:#2e7d32';
-      return '<div class="modal-item">'
-        + '<input type="checkbox" class="restore-chk" data-key="' + k + '" id="chk_' + encodeURIComponent(k) + '">'
-        + '<label for="chk_' + encodeURIComponent(k) + '"><strong>' + r.매출처명 + '</strong> · ' + r.상품명 + ' ' + r.규격 + '<br>'
-        + '<span style="font-size:.76rem;color:#aaa">' + r.유효기한_표시 + ' | 잔여 ' + r.잔여일수 + '일 | 수량 ' + r.수량 + '</span></label>'
-        + '<span class="mi-badge" style="' + bc + '">' + r.구분 + '</span></div>';
-    }),
-    ...extraKeys.map(function(k) {
-      var ek = k.replace(/"/g, '&quot;');
-      var parts = k.split('|');
-      return '<div class="modal-item">'
-        + '<input type="checkbox" class="restore-chk" data-key="' + ek + '" id="chk_' + encodeURIComponent(ek) + '">'
-        + '<label for="chk_' + encodeURIComponent(ek) + '"><span style="color:#aaa">' + parts[0] + ' · ' + parts[1] + ' ' + parts[2] + '</span><br>'
-        + '<span style="font-size:.76rem;color:#ccc">(현재 데이터에 없는 항목)</span></label></div>';
-    })
-  ].join('');
-  document.getElementById('restoreModal').classList.add('open');
-}
-
-function closeModal() { document.getElementById('restoreModal').classList.remove('open'); }
-function toggleSelectAll() {
-  var chks = document.querySelectorAll('.restore-chk');
-  var allChecked = [...chks].every(function(c){ return c.checked; });
-  chks.forEach(function(c){ c.checked = !allChecked; });
-}
-function restoreSelected() {
-  var del = loadDeleted();
-  document.querySelectorAll('.restore-chk:checked').forEach(function(c){ del.delete(c.dataset.key); });
-  saveDeleted(del); closeModal(); renderTable();
-}
-function restoreAllConfirm() {
-  var key = 'del_impark' + (window._CURRENT_PERSON ? '_' + window._CURRENT_PERSON : '');
-  localStorage.removeItem(key); closeModal(); renderTable();
-}
-document.addEventListener('click', function(e) {
-  var modal = document.getElementById('restoreModal');
-  if (modal && e.target === modal) closeModal();
-  var tModal = document.getElementById('tokenModal');
-  if (tModal && e.target === tModal) closeTokenModal();
-});
-
-function renderTable() {
-  var IMPARK = window._IMPARK || [];
-  var del = loadDeleted();
-  var pharmacy = document.getElementById('pharmacyFilter').value;
-  var search = document.getElementById('searchInput').value.toLowerCase();
-  var rows = IMPARK.filter(function(r) {
-    if (del.has(itemKey(r))) return false;
-    if (currentFilter !== '전체' && r['구분'] !== currentFilter) return false;
-    if (pharmacy && r['매출처명'] !== pharmacy) return false;
-    if (search && !r['상품명'].toLowerCase().includes(search)) return false;
-    return true;
-  });
-  var hiddenCount = IMPARK.filter(function(r){ return del.has(itemKey(r)); }).length;
-  document.getElementById('countLabel').textContent = rows.length + '건 표시 중';
-  var hi = document.getElementById('hiddenInfo');
-  var rb = document.getElementById('btnRestore');
-  if (hiddenCount > 0) { hi.textContent = '(' + hiddenCount + '건 숨김)'; rb.style.display = 'inline-block'; }
-  else { hi.textContent = ''; rb.style.display = 'none'; }
-  document.getElementById('tableBody').innerHTML = rows.map(function(r) {
-    var d = r['잔여일수'];
-    var dc = d <= 60 ? 'days-urgent' : d <= 120 ? 'days-warn' : 'days-ok';
-    var k = itemKey(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    return '<tr>'
-      + '<td><span class="badge ' + r['구분'] + '">' + r['구분'] + '</span></td>'
-      + '<td>' + r['매출처명'] + '</td>'
-      + '<td>' + r['상품명'] + '</td>'
-      + '<td>' + r['규격'] + '</td>'
-      + '<td>' + r['일련번호'] + '</td>'
-      + '<td>' + r['유효기한_표시'] + '</td>'
-      + '<td><span class="days-chip ' + dc + '">' + d + '일</span></td>'
-      + '<td>' + r['수량'] + '</td>'
-      + '<td><button class="btn-del" onclick="deleteItem(\'' + k + '\')">✓ 확인</button></td>'
-      + '</tr>';
-  }).join('');
-}
-
-function buildQueries(raw) {
-  var tokens = raw.split(/[,\s]+/).map(function(q){ return q.trim(); }).filter(function(q){ return q.length > 0; });
-  var prefix = ''; var queries = [];
-  tokens.forEach(function(t) {
-    if (t.length >= 6) { prefix = t.substring(0,3); queries.push(t); }
-    else if (prefix) { queries.push(prefix + t.padStart(3,'0')); }
-    else { queries.push(t); }
-  });
-  return queries;
-}
-
-function doRecallSearch() {
-  var RECALL_DB = window._RECALL_DB || [];
-  var type = document.getElementById('searchType').value;
-  var raw = document.getElementById('recallInput').value.trim();
-  if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
-  var queries = buildQueries(raw);
-  var results = RECALL_DB.filter(function(r) {
-    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
-    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
-  });
-  var resultEl = document.getElementById('recallResult');
-  var summaryEl = document.getElementById('recallSummary');
-  var tbody = document.getElementById('recallTableBody');
-  if (results.length === 0) {
-    resultEl.style.display = 'block';
-    summaryEl.innerHTML = '"' + raw + '" — 조회된 거래처 없음';
-    tbody.innerHTML = '<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
-    return;
-  }
-  var 거래처목록 = [...new Set(results.map(function(r){ return r['매출처명']; }))];
-  var 총수량 = results.reduce(function(s,r){ return s + r['수량']; }, 0);
-  var 품목명목록 = [...new Set(results.map(function(r){ return r['상품명']; }))].join(', ');
-  summaryEl.innerHTML = '📌 <strong>' + 품목명목록 + '</strong> — <strong>' + 거래처목록.length + '개 거래처</strong>에서 총 <strong>' + 총수량 + '개</strong> 보유 중';
-  results.sort(function(a,b){ return a['매출처명'].localeCompare(b['매출처명']) || a['상품명'].localeCompare(b['상품명']); });
-  tbody.innerHTML = results.map(function(r) {
-    return '<tr><td>' + r['매출처명'] + '</td><td>' + (r['전표일자_표시']||'-') + '</td>'
-      + '<td>' + r['상품명'] + '</td><td>' + r['규격'] + '</td>'
-      + '<td>' + (r['제조번호']||'-') + '</td><td>' + (r['일련번호']||'-') + '</td>'
-      + '<td>' + (r['유효기한']||'-') + '</td>'
-      + '<td><span class="qty-badge">' + r['수량'] + '</span></td></tr>';
-  }).join('');
-  resultEl.style.display = 'block';
-}
-function clearRecall() {
-  document.getElementById('recallInput').value = '';
-  document.getElementById('recallResult').style.display = 'none';
-}
-
-function doPriceSearch() {
-  var RECALL_DB = window._RECALL_DB || [];
-  var type = document.getElementById('priceSearchType').value;
-  var raw = document.getElementById('priceInput').value.trim();
-  if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
-  var queries = buildQueries(raw);
-  var results = RECALL_DB.filter(function(r) {
-    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
-    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
-  });
-  var resultEl = document.getElementById('priceResult');
-  var summaryEl = document.getElementById('priceSummary');
-  var tbody = document.getElementById('priceTableBody');
-  if (results.length === 0) {
-    resultEl.style.display = 'block';
-    summaryEl.innerHTML = '"' + raw + '" — 조회된 거래처 없음';
-    tbody.innerHTML = '<tr><td colspan="8" class="no-result">해당 품목을 보유한 거래처가 없습니다.</td></tr>';
-    return;
-  }
-  var 거래처목록 = [...new Set(results.map(function(r){ return r['매출처명']; }))];
-  var 총수량 = results.reduce(function(s,r){ return s + r['수량']; }, 0);
-  var 품목명목록 = [...new Set(results.map(function(r){ return r['상품명']; }))].join(', ');
-  summaryEl.innerHTML = '💊 <strong>' + 품목명목록 + '</strong> — <strong>' + 거래처목록.length + '개 거래처</strong>에서 총 <strong>' + 총수량 + '개</strong> 보유 중';
-  results.sort(function(a,b){ return a['매출처명'].localeCompare(b['매출처명']) || a['상품명'].localeCompare(b['상품명']); });
-  tbody.innerHTML = results.map(function(r) {
-    return '<tr><td>' + r['매출처명'] + '</td><td>' + (r['전표일자_표시']||'-') + '</td>'
-      + '<td>' + r['상품명'] + '</td><td>' + r['규격'] + '</td>'
-      + '<td>' + (r['제조번호']||'-') + '</td><td>' + (r['일련번호']||'-') + '</td>'
-      + '<td>' + (r['유효기한']||'-') + '</td>'
-      + '<td><span class="qty-badge">' + r['수량'] + '</span></td></tr>';
-  }).join('');
-  resultEl.style.display = 'block';
-}
-function clearPrice() {
-  document.getElementById('priceInput').value = '';
-  document.getElementById('priceResult').style.display = 'none';
-}
-</script>
 </body>
 </html>
