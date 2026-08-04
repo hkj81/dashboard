@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>갤럽 강점 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#334155;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --ex:#f59e0b;--in:#ef4444;--re:#3b82f6;--st:#8b5cf6;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',-apple-system,sans-serif;min-height:100vh;max-width:640px;margin:0 auto;}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* Header */
+header{padding:16px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--surface);}
+.btn-back{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px 4px 0;}
+.hd-title{font-size:18px;font-weight:800;flex:1;}
+.hd-sub{font-size:11px;color:var(--text3);}
+
+/* Scroll area */
+.scroll{flex:1;overflow-y:auto;padding:16px 20px 80px;}
+
+/* Team tabs */
+.tab-row{display:flex;gap:8px;padding:12px 20px;overflow-x:auto;border-bottom:1px solid var(--surface);scrollbar-width:none;}
+.tab-row::-webkit-scrollbar{display:none;}
+.tab{background:var(--surface);border:none;border-radius:20px;color:var(--text2);padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.tab.on{background:var(--text);color:var(--bg);}
+
+/* Person card */
+.p-card{background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;border:1.5px solid transparent;}
+.p-card:hover{background:var(--surface2);}
+.p-card.done{border-color:var(--surface2);}
+.p-avatar{width:40px;height:40px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;}
+.p-info{flex:1;}
+.p-name{font-size:15px;font-weight:700;}
+.p-role{font-size:11px;color:var(--text3);margin-top:2px;}
+.p-badge{font-size:11px;padding:3px 8px;border-radius:10px;}
+.badge-done{background:#22c55e22;color:#22c55e;}
+.badge-empty{background:var(--surface2);color:var(--text3);}
+
+/* Strength chips */
+.domain-block{margin-bottom:18px;}
+.domain-hd{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:10px;}
+.d-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.d-name{font-size:13px;font-weight:700;}
+.d-cnt{font-size:12px;color:var(--text3);margin-left:auto;}
+.chip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.chip{background:var(--surface);border:1.5px solid var(--surface2);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .15s;position:relative;user-select:none;}
+.chip:hover{border-color:var(--text3);}
+.chip.sel{color:#fff;}
+.chip-rank{position:absolute;top:5px;right:6px;font-size:11px;font-weight:800;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;}
+.chip-ko{font-size:13px;font-weight:600;display:block;}
+.chip-en{font-size:9px;color:var(--text3);display:block;margin-top:2px;}
+.chip.sel .chip-en{color:rgba(255,255,255,0.55);}
+
+/* Top5 summary */
+.top5-bar{background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+.top5-lbl{font-size:11px;color:var(--text3);margin-bottom:8px;}
+.top5-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.ttag{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600;}
+
+/* Submit */
+.sub-btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s;}
+.sub-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--surface2);color:var(--text3);}
+.sub-btn.ready{background:#22c55e;color:#000;}
+
+/* Profile */
+.prof-hero{background:var(--surface);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;}
+.prof-name{font-size:26px;font-weight:800;}
+.prof-team{font-size:13px;color:var(--text3);margin-top:4px;}
+.prof-updated{font-size:11px;color:var(--text3);margin-top:6px;}
+.edit-btn{margin-top:12px;background:var(--surface2);border:none;border-radius:10px;color:var(--text2);padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;}
+
+.str-card{border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;}
+.rank-circle{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0;}
+.sc-info{flex:1;}
+.sc-ko{font-size:16px;font-weight:700;}
+.sc-en{font-size:12px;opacity:.65;margin-top:2px;}
+.sc-domain{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(0,0,0,0.25);margin-top:4px;display:inline-block;}
+
+/* Charts */
+.chart-box{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:16px;}
+.chart-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:14px;}
+.chart-wrap{position:relative;height:220px;}
+
+/* Team members list */
+.mem-row{background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.mem-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.mem-name{font-size:15px;font-weight:700;cursor:pointer;text-decoration:underline;text-decoration-color:var(--text3);}
+.mem-role{font-size:11px;padding:2px 8px;border-radius:10px;background:#f59e0b22;color:#f59e0b;}
+.mem-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.mem-tag{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600;}
+.mem-empty{font-size:13px;color:var(--text3);}
+
+/* Bottom nav */
+.bnav{display:flex;border-top:1px solid var(--surface);background:var(--bg);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:640px;z-index:50;}
+.bn{flex:1;background:none;border:none;color:var(--text3);padding:10px 8px;font-size:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s;}
+.bn.on{color:var(--text);}
+.bn-icon{font-size:20px;}
+.back-home{display:flex;align-items:center;gap:6px;color:var(--text3);font-size:13px;text-decoration:none;padding:14px 20px 0;}
+
+/* Token modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;z-index:200;}
+.modal.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+.modal-desc{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:14px;}
+.modal-input{width:100%;background:var(--bg);border:1px solid var(--surface2);border-radius:10px;padding:12px;color:var(--text);font-size:13px;margin-bottom:12px;}
+.modal-btn{width:100%;padding:14px;border:none;border-radius:12px;background:#22c55e;color:#000;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.modal-cancel{width:100%;padding:10px;border:none;border-radius:12px;background:transparent;color:var(--text3);font-size:14px;cursor:pointer;}
+
+/* Spinner */
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--surface2);border-top-color:var(--text2);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ── SCREEN: 팀원 목록 (홈) ── -->
+<div class="screen active" id="s-home">
+  <header>
+    <a href="index.html" class="btn-back" title="메인으로">←</a>
+    <div>
+      <div class="hd-title">💪 갤럽 강점 분석</div>
+      <div class="hd-sub">CliftonStrengths · 희망-실천 4기</div>
+    </div>
+  </header>
+  <div class="tab-row" id="team-tabs"></div>
+  <div class="scroll" id="member-list"></div>
+</div>
+
+<!-- ── SCREEN: 강점 입력 ── -->
+<div class="screen" id="s-input">
+  <header>
+    <button class="btn-back" onclick="goHome()">←</button>
+    <div>
+      <div class="hd-title" id="input-name-hd">강점 입력</div>
+      <div class="hd-sub">상위 5개를 순서대로 선택하세요</div>
+    </div>
+  </header>
+  <div class="scroll" id="input-area"></div>
+</div>
+
+<!-- ── SCREEN: 개인 프로필 ── -->
+<div class="screen" id="s-profile">
+  <header>
+    <button class="btn-back" onclick="goHome()">←</button>
+    <div class="hd-title" id="profile-name-hd">프로필</div>
+  </header>
+  <div class="scroll" id="profile-area"></div>
+</div>
+
+<!-- ── TOKEN MODAL ── -->
+<div class="modal" id="token-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 GitHub 토큰 설정</div>
+    <div class="modal-desc">
+      팀원들과 데이터를 공유하려면 GitHub Personal Access Token이 필요합니다.<br>
+      <strong style="color:#f1f5f9">한 번만</strong> 입력하면 저장됩니다.
+    </div>
+    <input class="modal-input" id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <button class="modal-btn" onclick="saveToken()">저장</button>
+    <button class="modal-cancel" onclick="closeTokenModal()">취소 (읽기 전용으로 사용)</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const TEAMS = [
+  { id:'1팀', leader:'김일호', members:['남정완','박동수','장진호','이선호','최익환','송효성'] },
+  { id:'2팀', leader:'조현욱', members:['전희호','이현민','전정현','소현근','김진호'] },
+  { id:'3팀', leader:'홍경진', members:['류태성','박원기','차인봉','박진형'] },
+  { id:'4팀', leader:'최병철', members:['정은규','이상욱','박경석','김찬희'] },
+];
+
+const STRENGTHS = [
+  // 실행력
+  {ko:'성취',en:'Achiever',d:'ex'},{ko:'조율',en:'Arranger',d:'ex'},{ko:'신념',en:'Belief',d:'ex'},
+  {ko:'일관성',en:'Consistency',d:'ex'},{ko:'신중',en:'Deliberative',d:'ex'},{ko:'절제',en:'Discipline',d:'ex'},
+  {ko:'집중',en:'Focus',d:'ex'},{ko:'책임',en:'Responsibility',d:'ex'},{ko:'회복',en:'Restorative',d:'ex'},
+  // 영향력
+  {ko:'행동',en:'Activator',d:'in'},{ko:'주도',en:'Command',d:'in'},{ko:'소통',en:'Communication',d:'in'},
+  {ko:'경쟁',en:'Competition',d:'in'},{ko:'최대화',en:'Maximizer',d:'in'},{ko:'자기확신',en:'Self-Assurance',d:'in'},
+  {ko:'인정욕구',en:'Significance',d:'in'},{ko:'설득',en:'Woo',d:'in'},
+  // 관계형성
+  {ko:'적응',en:'Adaptability',d:'re'},{ko:'연대',en:'Connectedness',d:'re'},{ko:'개발',en:'Developer',d:'re'},
+  {ko:'공감',en:'Empathy',d:'re'},{ko:'화합',en:'Harmony',d:'re'},{ko:'포용',en:'Includer',d:'re'},
+  {ko:'개별화',en:'Individualization',d:'re'},{ko:'긍정',en:'Positivity',d:'re'},{ko:'친밀',en:'Relator',d:'re'},
+  // 전략적사고
+  {ko:'분석',en:'Analytical',d:'st'},{ko:'맥락',en:'Context',d:'st'},{ko:'미래지향',en:'Futuristic',d:'st'},
+  {ko:'착상',en:'Ideation',d:'st'},{ko:'수집',en:'Input',d:'st'},{ko:'사색',en:'Intellection',d:'st'},
+  {ko:'학습',en:'Learner',d:'st'},{ko:'전략',en:'Strategic',d:'st'},
+];
+
+const DOMAIN = {
+  ex:{ name:'실행력', color:'#f59e0b', bg:'#f59e0b18' },
+  in:{ name:'영향력', color:'#ef4444', bg:'#ef444418' },
+  re:{ name:'관계형성', color:'#3b82f6', bg:'#3b82f618' },
+  st:{ name:'전략적사고', color:'#8b5cf6', bg:'#8b5cf618' },
+};
+
+// ══════════════════════════════════════════
+// GITHUB
+// ══════════════════════════════════════════
+const REPO  = 'hkj81/dashboard';
+const DFILE = 'strengths_data.json';
+let ghToken = localStorage.getItem('ghStrToken') || '';
+let allData = {};
+let fileSha  = '';
+
+async function loadData() {
+  try {
+    const headers = { 'Accept':'application/vnd.github.v3+json' };
+    if (ghToken) headers['Authorization'] = 'token ' + ghToken;
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`, { headers });
+    if (r.ok) {
+      const j = await r.json();
+      fileSha = j.sha;
+      allData = JSON.parse(atob(j.content.replace(/\n/g,'')));
+    } else if (r.status === 404) {
+      allData = {};
+      fileSha = '';
+    }
+  } catch(e) { allData = {}; }
+  renderCurrentTeam();
+}
+
+async function savePersonData(name, top5) {
+  if (!ghToken) { document.getElementById('token-modal').classList.add('open'); return false; }
+  const team = TEAMS.find(t => t.leader===name || t.members.includes(name))?.id || '';
+  allData[name] = { team, top5, updatedAt: new Date().toISOString().slice(0,10) };
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(allData, null, 2))));
+  const body = { message: `강점 업데이트: ${name}`, content, sha: fileSha || undefined };
+  const headers = { 'Authorization':'token '+ghToken, 'Content-Type':'application/json' };
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`, { method:'PUT', headers, body:JSON.stringify(body) });
+    if (r.ok) { const j = await r.json(); fileSha = j.content.sha; return true; }
+    alert('저장 실패. 토큰을 확인해주세요.');
+    return false;
+  } catch { alert('저장 실패. 네트워크를 확인해주세요.'); return false; }
+}
+
+function saveToken() {
+  const t = document.getElementById('token-input').value.trim();
+  if (t.length < 10) { alert('토큰이 너무 짧습니다.'); return; }
+  ghToken = t;
+  localStorage.setItem('ghStrToken', t);
+  document.getElementById('token-modal').classList.remove('open');
+  if (pendingSave) { pendingSave(); pendingSave = null; }
+}
+function closeTokenModal() { document.getElementById('token-modal').classList.remove('open'); }
+let pendingSave = null;
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+let currentTeam = '1팀';
+let currentPerson = '';
+let selectedTop5 = []; // array of ko names in order
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHome() { showScreen('s-home'); renderCurrentTeam(); }
+
+// ══════════════════════════════════════════
+// HOME SCREEN
+// ══════════════════════════════════════════
+function initTabs() {
+  const row = document.getElementById('team-tabs');
+  row.innerHTML = '';
+  TEAMS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (t.id===currentTeam?' on':'');
+    btn.textContent = t.id;
+    btn.onclick = () => { currentTeam = t.id; initTabs(); renderCurrentTeam(); };
+    row.appendChild(btn);
+  });
+}
+
+function renderCurrentTeam() {
+  const team = TEAMS.find(t => t.id === currentTeam);
+  const list = document.getElementById('member-list');
+  list.innerHTML = '';
+  const all = [{ name:team.leader, role:'팀장' }, ...team.members.map(m=>({name:m,role:'팀원'}))];
+  all.forEach(({ name, role }) => {
+    const data = allData[name];
+    const card = document.createElement('div');
+    card.className = 'p-card' + (data?' done':'');
+    card.innerHTML = `
+      <div class="p-avatar">${name[0]}</div>
+      <div class="p-info">
+        <div class="p-name">${name}</div>
+        <div class="p-role">${currentTeam} · ${role}</div>
+        ${data ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${data.top5.slice(0,3).map(ko=>{const s=STRENGTHS.find(x=>x.ko===ko);return`<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${DOMAIN[s?.d||'ex'].bg};color:${DOMAIN[s?.d||'ex'].color};font-weight:600">${ko}</span>`}).join('')}${data.top5.length>3?`<span style="font-size:11px;color:var(--text3)">+${data.top5.length-3}</span>`:''}</div>` : ''}
+      </div>
+      <span class="p-badge ${data?'badge-done':'badge-empty'}">${data?'입력완료':'미입력'}</span>
+    `;
+    card.onclick = () => {
+      if (data) openProfile(name);
+      else openInput(name);
+    };
+    list.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════
+// INPUT SCREEN
+// ══════════════════════════════════════════
+function openInput(name) {
+  currentPerson = name;
+  selectedTop5 = allData[name]?.top5 ? [...allData[name].top5] : [];
+  document.getElementById('input-name-hd').textContent = name + ' · 강점 입력';
+  renderInputArea();
+  showScreen('s-input');
+}
+
+function renderInputArea() {
+  const area = document.getElementById('input-area');
+  const domains = ['ex','in','re','st'];
+  let html = `<div class="top5-bar"><div class="top5-lbl">선택된 강점 (${selectedTop5.length}/5)</div><div class="top5-tags" id="top5-tags"></div></div>`;
+  domains.forEach(d => {
+    const dom = DOMAIN[d];
+    const list = STRENGTHS.filter(s => s.d === d);
+    html += `<div class="domain-block">
+      <div class="domain-hd" style="background:${dom.bg}">
+        <div class="d-dot" style="background:${dom.color}"></div>
+        <div class="d-name" style="color:${dom.color}">${dom.name}</div>
+        <div class="d-cnt">${list.length}개</div>
+      </div>
+      <div class="chip-grid">`;
+    list.forEach(s => {
+      const rank = selectedTop5.indexOf(s.ko);
+      const sel = rank >= 0;
+      html += `<div class="chip${sel?' sel':''}" id="chip-${s.ko}"
+        style="${sel?`background:${dom.color};border-color:${dom.color};`:''}"
+        onclick="toggleChip('${s.ko}','${d}')">
+        ${sel ? `<div class="chip-rank">${rank+1}</div>` : ''}
+        <span class="chip-ko">${s.ko}</span>
+        <span class="chip-en">${s.en}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `<button class="sub-btn ${selectedTop5.length===5?'ready':''}" id="sub-btn"
+    ${selectedTop5.length!==5?'disabled':''} onclick="submitStrengths()">
+    ${selectedTop5.length===5?'✅ 저장하기':'상위 5개를 선택하세요 ('+selectedTop5.length+'/5)'}
+  </button>`;
+  area.innerHTML = html;
+  renderTop5Tags();
+}
+
+function renderTop5Tags() {
+  const tags = document.getElementById('top5-tags');
+  if (!tags) return;
+  if (selectedTop5.length === 0) { tags.innerHTML = '<span style="color:var(--text3);font-size:12px">아직 선택 없음</span>'; return; }
+  tags.innerHTML = selectedTop5.map((ko,i) => {
+    const s = STRENGTHS.find(x=>x.ko===ko);
+    const dom = DOMAIN[s?.d||'ex'];
+    return `<span class="ttag" style="background:${dom.bg};color:${dom.color}">${i+1}. ${ko}</span>`;
+  }).join('');
+}
+
+function toggleChip(ko, d) {
+  const idx = selectedTop5.indexOf(ko);
+  if (idx >= 0) {
+    selectedTop5.splice(idx, 1);
+  } else {
+    if (selectedTop5.length >= 5) { alert('이미 5개가 선택되었습니다. 하나를 먼저 취소하세요.'); return; }
+    selectedTop5.push(ko);
+  }
+  renderInputArea();
+}
+
+async function submitStrengths() {
+  if (selectedTop5.length !== 5) return;
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>저장 중...';
+  const ok = await savePersonData(currentPerson, selectedTop5);
+  if (ok) {
+    alert(`${currentPerson}님의 강점이 저장되었습니다!`);
+    goHome();
+  } else {
+    btn.disabled = false;
+    btn.className = 'sub-btn ready';
+    btn.innerHTML = '✅ 저장하기';
+  }
+}
+
+// ══════════════════════════════════════════
+// PROFILE SCREEN
+// ══════════════════════════════════════════
+let barChart = null, radarChart = null;
+
+function openProfile(name) {
+  currentPerson = name;
+  document.getElementById('profile-name-hd').textContent = name;
+  const data = allData[name];
+  if (!data) { openInput(name); return; }
+  const team = TEAMS.find(t => t.leader===name||t.members.includes(name));
+  const role = team?.leader===name ? '팀장' : '팀원';
+  const area = document.getElementById('profile-area');
+
+  // Top5 cards
+  const cardsHtml = data.top5.map((ko,i) => {
+    const s = STRENGTHS.find(x=>x.ko===ko);
+    const dom = DOMAIN[s?.d||'ex'];
+    return `<div class="str-card" style="background:${dom.bg}">
+      <div class="rank-circle" style="color:${dom.color}">${i+1}</div>
+      <div class="sc-info">
+        <div class="sc-ko">${ko}</div>
+        <div class="sc-en">${s?.en||''}</div>
+        <span class="sc-domain" style="color:${dom.color}">${dom.name}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="prof-hero">
+      <div class="prof-name">${name}</div>
+      <div class="prof-team">${team?.id||''} · ${role}</div>
+      <div class="prof-updated">업데이트: ${data.updatedAt||''}</div>
+      <button class="edit-btn" onclick="openInput('${name}')">✏️ 수정하기</button>
+    </div>
+    <div style="margin-bottom:4px;font-size:13px;font-weight:700;color:var(--text2)">상위 5대 강점</div>
+    <div style="margin-bottom:16px">${cardsHtml}</div>
+    <div class="chart-box">
+      <div class="chart-title">📊 강점 도메인 분포</div>
+      <div class="chart-wrap"><canvas id="radar-chart"></canvas></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">📈 상위 5개 강점</div>
+      <div class="chart-wrap"><canvas id="bar-chart"></canvas></div>
+    </div>
+  `;
+
+  showScreen('s-profile');
+  setTimeout(() => drawCharts(data.top5), 100);
+}
+
+function drawCharts(top5) {
+  // Radar: domain counts
+  const counts = { ex:0, in:0, re:0, st:0 };
+  top5.forEach(ko => { const s=STRENGTHS.find(x=>x.ko===ko); if(s) counts[s.d]++; });
+  const rCtx = document.getElementById('radar-chart')?.getContext('2d');
+  if (!rCtx) return;
+  if (radarChart) radarChart.destroy();
+  radarChart = new Chart(rCtx, {
+    type:'radar',
+    data:{
+      labels:['실행력','영향력','관계형성','전략적사고'],
+      datasets:[{
+        data:[counts.ex,counts.in,counts.re,counts.st],
+        backgroundColor:'rgba(139,92,246,0.2)',
+        borderColor:'#8b5cf6',
+        pointBackgroundColor:'#8b5cf6',
+        pointRadius:5,
+        borderWidth:2,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{min:0,max:5,ticks:{stepSize:1,color:'#64748b',font:{size:10}},grid:{color:'#1e293b'},pointLabels:{color:'#94a3b8',font:{size:12}},angleLines:{color:'#1e293b'}}},
+      plugins:{legend:{display:false}}
+    }
+  });
+
+  // Bar: top5
+  const bCtx = document.getElementById('bar-chart')?.getContext('2d');
+  if (!bCtx) return;
+  if (barChart) barChart.destroy();
+  const bColors = top5.map(ko=>{ const s=STRENGTHS.find(x=>x.ko===ko); return DOMAIN[s?.d||'ex'].color; });
+  barChart = new Chart(bCtx, {
+    type:'bar',
+    data:{
+      labels:top5.map((ko,i)=>`${i+1}. ${ko}`),
+      datasets:[{ data:[5,4,3,2,1], backgroundColor:bColors, borderRadius:8 }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{display:false},
+        y:{grid:{display:false},ticks:{color:'#f1f5f9',font:{size:13,weight:'bold'}}}
+      },
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+  loadData();
+});
+</script>
+</body>
+</html>
