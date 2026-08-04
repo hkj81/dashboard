@@ -112,6 +112,20 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 /* Profile tabs */
 .prof-tab{flex:1;background:none;border:none;color:var(--text3);padding:12px 4px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .prof-tab.on{color:var(--text);border-bottom-color:var(--text);}
+/* Team view */
+.tv-sep{width:1px;background:var(--surface2);margin:4px 2px;flex-shrink:0;}
+.tv-btn{background:var(--surface2);border:none;border-radius:20px;color:var(--text2);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.tv-btn.on{background:#22c55e22;color:#22c55e;border:1.5px solid #22c55e44;}
+.tv-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;background:var(--surface);}
+.tv-table{border-collapse:collapse;width:100%;min-width:440px;}
+.tv-table th{background:var(--surface2);padding:9px 8px;font-size:11px;font-weight:700;color:var(--text3);text-align:center;white-space:nowrap;}
+.tv-table th:first-child{text-align:left;padding-left:14px;min-width:72px;}
+.tv-table td{padding:7px 6px;border-bottom:1px solid var(--surface2);text-align:center;vertical-align:middle;}
+.tv-table td:first-child{text-align:left;padding-left:14px;}
+.tv-table tr:last-child td{border-bottom:none;}
+.tv-chip{display:inline-block;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.tv-chip:hover{opacity:.75;}
+.tv-empty{font-size:10px;color:var(--text3);}
 
 </style>
 </head>
@@ -162,6 +176,15 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   <div class="scroll" id="prof-str"></div>
   <div class="scroll" id="prof-chart" style="display:none"></div>
   <div class="scroll" id="prof-ai" style="display:none;padding:14px 18px 100px;"></div>
+</div>
+
+<!-- TEAM VIEW -->
+<div class="screen" id="s-teamview">
+  <header>
+    <button class="btn-back" onclick="goHome()">←</button>
+    <div><div class="hd-title" id="tv-hd">팀 한눈보기</div><div class="hd-sub">팀원 강점 전체 현황</div></div>
+  </header>
+  <div class="scroll" id="tv-content"></div>
 </div>
 
 <!-- STRENGTH DETAIL MODAL -->
@@ -303,6 +326,9 @@ function initTabs(){
     const b=document.createElement('button');b.className='tab'+(t.id===curTeam?' on':'');b.textContent=t.id;
     b.onclick=()=>{curTeam=t.id;initTabs();renderMemberList();};row.appendChild(b);
   });
+  const sep=document.createElement('div');sep.className='tv-sep';row.appendChild(sep);
+  const tv=document.createElement('button');tv.className='tv-btn';tv.textContent='📋 한눈보기';
+  tv.onclick=()=>showTeamView();row.appendChild(tv);
 }
 function renderHome(){initTabs();renderMemberList();}
 function renderMemberList(){
@@ -323,6 +349,76 @@ function renderMemberList(){
     card.onclick=()=>d?openProfile(name):openInput(name);
     el.appendChild(card);
   });
+}
+
+// ══════════════ TEAM VIEW ══════════════
+function showTeamView(){
+  renderTeamView();
+  showScreen('s-teamview');
+}
+function renderTeamView(){
+  const team=TEAMS.find(t=>t.id===curTeam);
+  document.getElementById('tv-hd').textContent=curTeam+' 한눈보기';
+  const members=[{name:team.leader,role:'팀장'},...team.members.map(m=>({name:m,role:'팀원'}))];
+  const domCount={ex:0,in:0,re:0,st:0};
+
+  let rows='';
+  members.forEach(({name,role})=>{
+    const d=allData[name];
+    let cells='';
+    if(d&&d.top5&&d.top5.length===5){
+      d.top5.forEach((ko,i)=>{
+        const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
+        if(s)domCount[s.d]++;
+        cells+=`<td><span class="tv-chip" style="background:${dom.bg};color:${dom.color}" onclick="openStrModal('${ko}',${i+1})">${ko}</span></td>`;
+      });
+    }else{
+      cells=`<td colspan="5" style="text-align:center"><span class="tv-empty">미입력</span></td>`;
+    }
+    const roleColor=role==='팀장'?'#f59e0b':'var(--text3)';
+    rows+=`<tr>
+      <td><div style="font-size:13px;font-weight:700">${name}</div><div style="font-size:10px;color:${roleColor}">${role}</div></td>
+      ${cells}
+    </tr>`;
+  });
+
+  // 도메인 분포 바
+  const total=Object.values(domCount).reduce((a,b)=>a+b,0);
+  const distHtml=total>0?Object.entries(domCount).map(([k,v])=>v>0?
+    `<div style="text-align:center">
+      <div style="font-size:18px;font-weight:800;color:${DOM[k].color}">${v}</div>
+      <div style="font-size:10px;color:${DOM[k].color};margin-top:2px">${DOM[k].name}</div>
+    </div>`:''
+  ).join(''):'<span style="color:var(--text3);font-size:13px">데이터 없음</span>';
+
+  const barHtml=total>0?Object.entries(domCount).filter(([,v])=>v>0).map(([k,v])=>
+    `<div style="height:100%;width:${Math.round(v/total*100)}%;background:${DOM[k].color};opacity:.8" title="${DOM[k].name} ${v}개"></div>`
+  ).join(''):'';
+
+  document.getElementById('tv-content').innerHTML=`
+    <div style="padding:14px 18px 100px">
+      <div class="tv-wrap">
+        <table class="tv-table">
+          <thead><tr>
+            <th>팀원</th><th>1위</th><th>2위</th><th>3위</th><th>4위</th><th>5위</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+
+      <div style="background:var(--surface);border-radius:14px;padding:16px;margin-top:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:12px">📊 ${curTeam} 도메인 분포 (총 ${total}개)</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-around;margin-bottom:12px">
+          ${distHtml}
+        </div>
+        <div style="height:8px;border-radius:8px;overflow:hidden;display:flex;background:var(--surface2)">
+          ${barHtml}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+          ${Object.entries(DOM).map(([k,d])=>`<div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:${d.color}"></div><span style="font-size:10px;color:var(--text3)">${d.name}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
 }
 
 // ══════════════ INPUT ══════════════
