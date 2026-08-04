@@ -184,7 +184,12 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
     <button class="btn-back" onclick="goHome()">←</button>
     <div><div class="hd-title" id="tv-hd">팀 한눈보기</div><div class="hd-sub">팀원 강점 전체 현황</div></div>
   </header>
+  <div style="display:flex;border-bottom:1px solid var(--surface);">
+    <button class="prof-tab on" id="tvtab-members" onclick="switchTVTab('members')">👥 멤버 현황</button>
+    <button class="prof-tab" id="tvtab-analysis" onclick="switchTVTab('analysis')">📊 팀 분석</button>
+  </div>
   <div class="scroll" id="tv-content"></div>
+  <div class="scroll" id="tv-analysis" style="display:none"></div>
 </div>
 
 <!-- STRENGTH DETAIL MODAL -->
@@ -351,10 +356,53 @@ function renderMemberList(){
   });
 }
 
+// ══════════════ ANALYSIS HELPERS ══════════════
+const STRENGTH_TYPES={
+  ex:{label:'실행형 완성자',emoji:'⚙️',desc:'목표를 향해 끊임없이 움직이며 팀의 실행력을 이끕니다. 약속을 반드시 지키고 높은 생산성으로 주변에 신뢰를 줍니다.'},
+  in:{label:'영향력 리더',emoji:'🔥',desc:'주변 사람들에게 에너지를 불어넣고 방향을 제시합니다. 설득과 추진력으로 사람들을 움직이는 힘이 있습니다.'},
+  re:{label:'관계형성 팀빌더',emoji:'🤝',desc:'사람과 사람을 연결하고 팀의 화합과 신뢰를 만듭니다. 팀원 한 명 한 명을 깊이 이해하고 지지합니다.'},
+  st:{label:'전략적 사색가',emoji:'🧠',desc:'깊이 생각하고 전략을 세워 팀이 올바른 방향으로 나아가도록 돕습니다. 복잡한 문제를 꿰뚫어 보는 통찰력이 있습니다.'},
+};
+const TEAM_TYPES={
+  ex:{label:'실행 드림팀',emoji:'🚀',desc:'목표 달성에 탁월하며 어떤 어려움도 끝까지 해내는 팀입니다. 속도감 있는 실행력이 강점이나, 전략적 방향 설정을 보완하면 더욱 강해집니다.'},
+  in:{label:'영향력 파워팀',emoji:'⚡',desc:'에너지와 추진력이 넘치며 사람들을 이끄는 힘이 강한 팀입니다. 외부 설득과 협상에 강하나, 내부 관계 돌봄에 주의가 필요합니다.'},
+  re:{label:'관계형성 화합팀',emoji:'💚',desc:'신뢰와 협력이 넘치는 따뜻한 팀입니다. 심리적 안전감이 높아 창의성이 발휘되기 좋으나, 때로는 과감한 결단력이 필요합니다.'},
+  st:{label:'전략적 사고팀',emoji:'🔭',desc:'분석과 기획에 강하며 장기적 비전을 잘 수립합니다. 방향 설정에 탁월하나, 빠른 실행력을 보완하면 최강팀이 됩니다.'},
+};
+function getDominantDomain(top5){
+  const cnt={ex:0,in:0,re:0,st:0};
+  top5.forEach(ko=>{const s=S.find(x=>x.ko===ko);if(s)cnt[s.d]++;});
+  return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function getBlindSpots(top5){
+  const present=new Set(top5.map(ko=>S.find(x=>x.ko===ko)?.d).filter(Boolean));
+  return ['ex','in','re','st'].filter(d=>!present.has(d));
+}
+function getBestPartner(name,teamId){
+  const team=TEAMS.find(t=>t.id===teamId);if(!team)return null;
+  const myData=allData[name];if(!myData?.top5)return null;
+  const myDoms=new Set(myData.top5.map(ko=>S.find(x=>x.ko===ko)?.d).filter(Boolean));
+  const members=[team.leader,...team.members].filter(m=>m!==name&&allData[m]?.top5);
+  let best=null,bestScore=-1;
+  members.forEach(m=>{
+    const theirDoms=new Set(allData[m].top5.map(ko=>S.find(x=>x.ko===ko)?.d).filter(Boolean));
+    let score=0;theirDoms.forEach(d=>{if(!myDoms.has(d))score++;});
+    if(score>bestScore){bestScore=score;best={name:m,score};}
+  });
+  return best;
+}
+
 // ══════════════ TEAM VIEW ══════════════
 function showTeamView(){
   renderTeamView();
+  renderTeamAnalysis();
   showScreen('s-teamview');
+}
+function switchTVTab(tab){
+  document.getElementById('tv-content').style.display=tab==='members'?'block':'none';
+  document.getElementById('tv-analysis').style.display=tab==='analysis'?'block':'none';
+  document.getElementById('tvtab-members').classList.toggle('on',tab==='members');
+  document.getElementById('tvtab-analysis').classList.toggle('on',tab==='analysis');
 }
 function renderTeamView(){
   const team=TEAMS.find(t=>t.id===curTeam);
@@ -419,6 +467,137 @@ function renderTeamView(){
         </div>
       </div>
     </div>`;
+}
+
+function renderTeamAnalysis(){
+  const team=TEAMS.find(t=>t.id===curTeam);
+  const members=[team.leader,...team.members];
+  const inputMembers=members.filter(m=>allData[m]?.top5?.length===5);
+  const domCount={ex:0,in:0,re:0,st:0};
+  const strCount={};
+  const memberDoms={};
+  inputMembers.forEach(name=>{
+    memberDoms[name]=new Set();
+    allData[name].top5.forEach(ko=>{
+      const s=S.find(x=>x.ko===ko);
+      if(s){domCount[s.d]++;memberDoms[name].add(s.d);}
+      strCount[ko]=(strCount[ko]||0)+1;
+    });
+  });
+  const total=Object.values(domCount).reduce((a,b)=>a+b,0);
+  const coveredDoms=Object.entries(domCount).filter(([,v])=>v>0).map(([k])=>k);
+  const missingDoms=['ex','in','re','st'].filter(d=>!coveredDoms.includes(d));
+  const topStr=Object.entries(strCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const dominant=total>0?Object.entries(domCount).sort((a,b)=>b[1]-a[1])[0][0]:'ex';
+  const teamType=TEAM_TYPES[dominant];
+
+  // 시너지 파트너 쌍
+  const pairs=[];
+  for(let i=0;i<inputMembers.length;i++){
+    for(let j=i+1;j<inputMembers.length;j++){
+      const a=inputMembers[i],b=inputMembers[j];
+      const da=memberDoms[a],db=memberDoms[b];
+      let diff=0;da.forEach(d=>{if(!db.has(d))diff++;});db.forEach(d=>{if(!da.has(d))diff++;});
+      pairs.push({a,b,diff,score:diff});
+    }
+  }
+  pairs.sort((a,b)=>b.diff-a.diff);
+
+  // 개인별 인사이트 카드
+  const personInsights=inputMembers.map(name=>{
+    const top5=allData[name].top5;
+    const dom=getDominantDomain(top5);
+    const type=STRENGTH_TYPES[dom];
+    const blind=getBlindSpots(top5);
+    const partner=getBestPartner(name,curTeam);
+    const weakWarning=blind.length>=2;
+    return{name,type,blind,partner,weakWarning,dom};
+  });
+
+  let html=`<div style="padding:14px 18px 100px">`;
+
+  // 데이터 현황
+  html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:28px;font-weight:900;color:${inputMembers.length===members.length?'#22c55e':'#f59e0b'}">${inputMembers.length}/${members.length}</div>
+    <div><div style="font-size:13px;font-weight:700">데이터 입력 완료</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:2px">${inputMembers.length<members.length?'일부 팀원이 아직 강점을 입력하지 않았습니다':'모든 팀원의 강점이 입력되었습니다 ✅'}</div></div>
+  </div>`;
+
+  if(total===0){html+=`<div style="text-align:center;color:var(--text3);padding:40px">데이터를 입력하면 분석이 시작됩니다</div></div>`;document.getElementById('tv-analysis').innerHTML=html;return;}
+
+  // 팀 유형
+  html+=`<div style="background:linear-gradient(135deg,${DOM[dominant].bg},var(--surface));border:1.5px solid ${DOM[dominant].color}44;border-radius:16px;padding:18px;margin-bottom:14px">
+    <div style="font-size:11px;color:${DOM[dominant].color};font-weight:700;letter-spacing:.5px;margin-bottom:6px">🏷️ ${curTeam} 팀 유형 진단</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:6px">${teamType.emoji} ${teamType.label}</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6">${teamType.desc}</div>
+  </div>`;
+
+  // 도메인 커버리지
+  html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">🗂️ 도메인 커버리지 (${coveredDoms.length}/4)</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+      ${['ex','in','re','st'].map(d=>{
+        const v=domCount[d];const covered=v>0;
+        return`<div style="background:${covered?DOM[d].bg:'var(--surface2)'};border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;${covered?'':'opacity:.5'}">
+          <div style="width:8px;height:8px;border-radius:50%;background:${DOM[d].color};flex-shrink:0"></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:${covered?DOM[d].color:'var(--text3)'}">${DOM[d].name}</div>
+          <div style="font-size:10px;color:var(--text3)">${covered?v+'개 강점':'미보유 ⚠️'}</div></div>
+        </div>`;}).join('')}
+    </div>
+    ${missingDoms.length>0?`<div style="margin-top:10px;padding:10px;background:#ef444415;border-radius:10px;border:1px solid #ef444430">
+      <div style="font-size:11px;color:#ef4444;font-weight:700">⚠️ 사각지대 주의</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">${missingDoms.map(d=>DOM[d].name).join(', ')} 영역이 없습니다. 해당 역량이 필요한 상황에서 취약할 수 있어요.</div>
+    </div>`:'<div style="margin-top:10px;padding:8px;background:#22c55e15;border-radius:10px;text-align:center;font-size:11px;color:#22c55e;font-weight:700">✅ 4개 도메인 모두 보유! 균형 잡힌 팀입니다.</div>'}
+  </div>`;
+
+  // 자주 나오는 강점 TOP5
+  html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">🏆 팀 공통 강점 TOP${topStr.length}</div>
+    ${topStr.map(([ko,cnt],i)=>{const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+      <div style="width:22px;height:22px;border-radius:50%;background:${dom.bg};color:${dom.color};font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+      <div style="flex:1"><span style="font-size:13px;font-weight:700">${ko}</span><span style="font-size:10px;color:var(--text3);margin-left:6px">${s?.en||''}</span></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="height:6px;border-radius:6px;width:${Math.round(cnt/inputMembers.length*80)+10}px;background:${dom.color};opacity:.7"></div>
+        <span style="font-size:11px;font-weight:700;color:${dom.color}">${cnt}명</span>
+      </div>
+    </div>`;}).join('')}
+  </div>`;
+
+  // 시너지 파트너 TOP3
+  if(pairs.length>0){
+    html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:4px">🔗 최고 시너지 파트너</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">서로 다른 강점 도메인이 많을수록 보완 관계가 강합니다</div>
+      ${pairs.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+        <div style="font-size:16px">${['🥇','🥈','🥉'][i]}</div>
+        <div style="flex:1;font-size:13px;font-weight:700">${p.a} <span style="color:var(--text3)">↔</span> ${p.b}</div>
+        <div style="font-size:11px;color:#22c55e;font-weight:700">보완 ${p.diff}개</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // 개인별 인사이트
+  html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">💡 팀원별 강점 인사이트</div>
+    ${personInsights.map(p=>{
+      const blindStr=p.blind.map(d=>`<span style="background:#ef444415;color:#ef4444;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:600">${DOM[d].name}</span>`).join(' ');
+      const partnerStr=p.partner?`<span style="background:#22c55e15;color:#22c55e;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:600">▶ ${p.partner.name}</span>`:'';
+      return`<div style="border-bottom:1px solid var(--surface2);padding:10px 0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:30px;height:30px;border-radius:50%;background:${DOM[p.dom].bg};color:${DOM[p.dom].color};font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.name[0]}</div>
+          <div><div style="font-size:13px;font-weight:700">${p.name}</div>
+          <div style="font-size:10px;color:${DOM[p.dom].color}">${p.type.emoji} ${p.type.label}</div></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-left:38px">
+          ${p.blind.length>0?`<div style="font-size:10px;color:var(--text3)">사각지대: ${blindStr}</div>`:'<div style="font-size:10px;color:#22c55e">✅ 균형 잡힌 강점</div>'}
+          ${p.partner?`<div style="font-size:10px;color:var(--text3);width:100%">최적 파트너: ${partnerStr}</div>`:''}
+        </div>
+      </div>`;}).join('')}
+  </div>`;
+
+  html+=`</div>`;
+  document.getElementById('tv-analysis').innerHTML=html;
 }
 
 // ══════════════ INPUT ══════════════
@@ -499,7 +678,12 @@ function openProfile(name){
       `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${DOM[k].bg};color:${DOM[k].color};font-weight:700">${DOM[k].name} ${v}</span>`
     ).join('');
 
-  // 강점 탭
+  // 강점 탭 - 인사이트 섹션 계산
+  const myDom=getDominantDomain(d.top5);
+  const myType=STRENGTH_TYPES[myDom];
+  const myBlind=getBlindSpots(d.top5);
+  const myPartner=getBestPartner(name,team?.id||'');
+
   const cardsHtml=d.top5.map((ko,i)=>{
     const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
     return`<div class="str-card" style="background:${dom.bg};cursor:pointer" onclick="openStrModal('${ko}',${i+1})">
@@ -513,7 +697,42 @@ function openProfile(name){
       </div>
     </div>`;
   }).join('');
-  document.getElementById('prof-str').innerHTML=`<div style="padding:14px 18px 80px">${cardsHtml}</div>`;
+
+  // 인사이트 카드
+  const insightHtml=`
+  <div style="background:linear-gradient(135deg,${DOM[myDom].bg},var(--surface));border:1.5px solid ${DOM[myDom].color}44;border-radius:14px;padding:14px;margin-bottom:12px">
+    <div style="font-size:11px;color:${DOM[myDom].color};font-weight:700;margin-bottom:6px">💡 강점 유형 진단</div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px">${myType.emoji} ${myType.label}</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6">${myType.desc}</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div style="background:var(--surface);border-radius:12px;padding:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">🎯 핵심 강점 도메인</div>
+      ${Object.entries(cnt).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+        `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${DOM[k].color};flex-shrink:0"></div>
+          <span style="font-size:11px;color:${DOM[k].color};font-weight:600">${DOM[k].name}</span>
+          <span style="font-size:10px;color:var(--text3)">${v}개</span>
+        </div>`).join('')}
+    </div>
+    <div style="background:var(--surface);border-radius:12px;padding:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">⚠️ 사각지대</div>
+      ${myBlind.length===0
+        ?`<div style="font-size:11px;color:#22c55e;font-weight:600">✅ 4개 영역 모두 보유! 균형잡힌 강점</div>`
+        :myBlind.map(d=>`<div style="font-size:11px;color:#ef4444;margin-bottom:4px">• ${DOM[d].name} 없음</div>`).join('')
+      }
+    </div>
+  </div>
+  ${myPartner?`<div style="background:var(--surface);border-radius:12px;padding:12px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">🔗 팀 내 최적 시너지 파트너</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">${myPartner.name[0]}</div>
+      <div><div style="font-size:14px;font-weight:700">${myPartner.name}</div>
+      <div style="font-size:11px;color:var(--text3)">서로 다른 강점으로 ${myPartner.score}개 영역 보완</div></div>
+    </div>
+  </div>`:''}`;
+
+  document.getElementById('prof-str').innerHTML=`<div style="padding:14px 18px 80px">${insightHtml}${cardsHtml}</div>`;
 
   // 차트 탭
   document.getElementById('prof-chart').innerHTML=`<div style="padding:14px 18px 80px">
