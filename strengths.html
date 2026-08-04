@@ -109,6 +109,10 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Section label */
 .sec-label{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;letter-spacing:.5px;}
+/* Profile tabs */
+.prof-tab{flex:1;background:none;border:none;color:var(--text3);padding:12px 4px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.prof-tab.on{color:var(--text);border-bottom-color:var(--text);}
+
 </style>
 </head>
 <body>
@@ -137,8 +141,27 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   <header>
     <button class="btn-back" onclick="goHome()">←</button>
     <div class="hd-title" id="prof-hd">프로필</div>
+    <button class="edit-btn" style="margin:0;font-size:12px;padding:6px 12px;" onclick="openInputCur()">✏️ 수정</button>
   </header>
-  <div class="scroll" id="prof-area"></div>
+  <!-- 프로필 요약 -->
+  <div id="prof-hero-bar" style="background:var(--surface);padding:12px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--surface2);">
+    <div id="prof-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;"></div>
+    <div style="flex:1">
+      <div id="prof-name-bar" style="font-size:17px;font-weight:800;"></div>
+      <div id="prof-sub-bar" style="font-size:12px;color:var(--text3);margin-top:2px;"></div>
+    </div>
+    <div id="prof-domain-pills" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:140px;"></div>
+  </div>
+  <!-- 탭 -->
+  <div style="display:flex;border-bottom:1px solid var(--surface);">
+    <button class="prof-tab on" id="ptab-str" onclick="switchPTab('str')">💪 강점</button>
+    <button class="prof-tab" id="ptab-chart" onclick="switchPTab('chart')">📊 차트</button>
+    <button class="prof-tab" id="ptab-ai" onclick="switchPTab('ai')">🤖 AI분석</button>
+  </div>
+  <!-- 탭 컨텐츠 -->
+  <div class="scroll" id="prof-str"></div>
+  <div class="scroll" id="prof-chart" style="display:none"></div>
+  <div class="scroll" id="prof-ai" style="display:none;padding:14px 18px 100px;"></div>
 </div>
 
 <!-- TOKEN MODAL -->
@@ -342,14 +365,37 @@ async function submitStr(){
 // ══════════════ PROFILE ══════════════
 let rChart=null,bChart=null;
 
+function openInputCur(){ openInput(curPerson); }
+
+function switchPTab(tab){
+  ['str','chart','ai'].forEach(t=>{
+    document.getElementById('prof-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('ptab-'+t).classList.toggle('on', t===tab);
+  });
+  if(tab==='chart') setTimeout(()=>{ const d=allData[curPerson]; if(d) drawCharts(d.top5); },80);
+}
+
 function openProfile(name){
   curPerson=name;
   const d=allData[name];if(!d){openInput(name);return;}
-  document.getElementById('prof-hd').textContent=name;
   const team=TEAMS.find(t=>t.leader===name||t.members.includes(name));
   const role=team?.leader===name?'팀장':'팀원';
-  const area=document.getElementById('prof-area');
 
+  // 상단 요약바
+  document.getElementById('prof-hd').textContent=name;
+  document.getElementById('prof-avatar').textContent=name[0];
+  document.getElementById('prof-name-bar').textContent=name;
+  document.getElementById('prof-sub-bar').textContent=`${team?.id||''} · ${role} · ${d.updatedAt||''}`;
+
+  // 도메인 요약 pills
+  const cnt={ex:0,in:0,re:0,st:0};
+  d.top5.forEach(ko=>{const s=S.find(x=>x.ko===ko);if(s)cnt[s.d]++;});
+  document.getElementById('prof-domain-pills').innerHTML=
+    Object.entries(cnt).filter(([,v])=>v>0).map(([k,v])=>
+      `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${DOM[k].bg};color:${DOM[k].color};font-weight:700">${DOM[k].name} ${v}</span>`
+    ).join('');
+
+  // 강점 탭
   const cardsHtml=d.top5.map((ko,i)=>{
     const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
     return`<div class="str-card" style="background:${dom.bg}">
@@ -370,25 +416,17 @@ function openProfile(name){
       </div>
     </div>`;
   }).join('');
+  document.getElementById('prof-str').innerHTML=`<div style="padding:14px 18px 80px">${cardsHtml}</div>`;
 
-  area.innerHTML=`
-    <div class="prof-hero">
-      <div class="prof-name">${name}</div>
-      <div class="prof-team">${team?.id||''} · ${role}</div>
-      <div class="prof-updated">업데이트: ${d.updatedAt||''}</div>
-      <button class="edit-btn" onclick="openInput('${name}')">✏️ 수정</button>
-    </div>
-    <div class="sec-label">상위 5대 강점 · 카드를 눌러 자세히 보기</div>
-    ${cardsHtml}
-    <div class="chart-box" style="margin-top:14px">
-      <div class="chart-title">📡 영역별 분포</div>
-      <div class="chart-wrap"><canvas id="rcv"></canvas></div>
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">📊 강점 순위</div>
-      <div class="chart-wrap"><canvas id="bcv"></canvas></div>
-    </div>
-    <div class="ai-section">
+  // 차트 탭
+  document.getElementById('prof-chart').innerHTML=`<div style="padding:14px 18px 80px">
+    <div class="chart-box"><div class="chart-title">📡 영역별 분포</div><div class="chart-wrap"><canvas id="rcv"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">📊 강점 순위</div><div class="chart-wrap"><canvas id="bcv"></canvas></div></div>
+  </div>`;
+
+  // AI 탭
+  document.getElementById('prof-ai').innerHTML=`
+    <div class="ai-section" style="margin:0">
       <div class="ai-header">
         <span style="font-size:20px">🤖</span>
         <span class="ai-title">AI 강점 분석</span>
@@ -397,8 +435,9 @@ function openProfile(name){
       <div id="ai-result"><div class="ai-placeholder">버튼을 누르면 AI가 강점 조합을 분석해드립니다</div></div>
     </div>`;
 
+  // 기본 탭: 강점
+  switchPTab('str');
   showScreen('s-profile');
-  setTimeout(()=>drawCharts(d.top5),120);
 }
 
 function toggleCard(id){
