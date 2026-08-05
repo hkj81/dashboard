@@ -113,7 +113,7 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 .prof-tab{flex:1;background:none;border:none;color:var(--text3);padding:12px 4px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
 .prof-tab.on{color:var(--text);border-bottom-color:var(--text);}
 /* Equal-height card layout for profile */
-#prof-str{overflow:hidden!important;padding:5px 10px!important;}
+#prof-str{overflow:hidden!important;padding:5px 10px 5px!important;display:flex!important;flex-direction:column!important;gap:5px!important;}
 /* Team view */
 .tv-sep{width:1px;background:var(--surface2);margin:4px 2px;flex-shrink:0;}
 .tv-btn{background:var(--surface2);border:none;border-radius:20px;color:var(--text2);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
@@ -232,6 +232,7 @@ const S = [
   {ko:'신념',en:'Belief',d:'ex',desc:'변하지 않는 핵심 가치를 가지고 있으며, 이 가치들이 삶의 의미와 방향을 제공합니다. 가족, 이타주의, 영성 등 특정 가치들이 삶의 나침반 역할을 합니다. 이 가치들이 높은 윤리 의식을 만들어내며, 어떤 대가를 치르더라도 자신이 중요하다고 생각하는 것을 위해 일하게 합니다.',pros:'강한 신뢰성, 일관된 행동, 명확한 삶의 기준',cons:'유연성 부족, 다른 견해 수용 어려움, 타협을 약점으로 볼 수 있음'},
   {ko:'일관성',en:'Consistency',d:'ex',desc:'모든 사람이 공평하게 대우받아야 한다고 믿으며, 명확한 규칙과 절차를 통해 이를 실현합니다. 편애나 특별 대우 없이 모두에게 동일한 기준을 적용하려 하며, 예측 가능하고 안정적인 환경을 만드는 데 기여합니다. 누군가가 규칙을 어기거나 특별 대우를 받을 때 불편함을 느낍니다.',pros:'공정함, 예측 가능한 행동, 안정적인 환경 조성',cons:'변화에 저항, 예외적 상황 처리 어려움, 융통성이 부족해 보일 수 있음'},
   {ko:'신중',en:'Deliberative',d:'ex',desc:'결정을 내리기 전에 잠재적인 위험과 장애물을 신중하게 파악합니다. 함부로 행동하지 않으며, 선택하기 전에 정보를 충분히 수집하고 검토합니다. 이 조심스러운 접근 방식이 팀이 실수를 피하고 더 나은 결과를 얻도록 돕습니다.',pros:'실수 최소화, 리스크 관리, 신중한 의사결정',cons:'결정 속도 저하, 빠른 기회를 놓칠 수 있음, 우유부단해 보일 수 있음'},
+  {ko:'체계',en:'Discipline',d:'ex',desc:'세상이 질서 있고 예측 가능하기를 원합니다. 일상과 구조를 만들고, 프로젝트를 구체적인 마감일과 단계로 나눕니다. 혼돈이나 불확실성 앞에서도 체계적인 접근으로 정확성과 효율성을 유지하며, 다른 사람들이 계획을 지키도록 돕습니다.',pros:'높은 정확성, 체계적 실행, 마감 준수',cons:'자발성 부족, 갑작스러운 변화에 스트레스, 너무 경직될 수 있음'},
   {ko:'절제',en:'Discipline',d:'ex',desc:'세상이 질서 있고 예측 가능하기를 원합니다. 일상과 구조를 만들고, 프로젝트를 구체적인 마감일과 단계로 나눕니다. 혼돈이나 불확실성 앞에서도 체계적인 접근으로 정확성과 효율성을 유지하며, 다른 사람들이 계획을 지키도록 돕습니다.',pros:'높은 정확성, 체계적 실행, 마감 준수',cons:'자발성 부족, 갑작스러운 변화에 스트레스, 너무 경직될 수 있음'},
   {ko:'집중',en:'Focus',d:'ex',desc:'매년, 매월, 매주, 매일 목표를 설정하고 그 목표를 향해 나아갑니다. 우선순위를 빠르게 파악하며, 목표와 관련 없는 것들을 과감히 제거할 수 있습니다. 이 방향 감각이 팀을 효율적으로 이끌며, 한 번 시작한 일은 끝까지 마무리하려 합니다.',pros:'탁월한 목표 달성, 효율성, 팀의 방향 제시',cons:'갑작스러운 방향 변화에 어려움, 무관한 기회를 무시할 수 있음'},
   {ko:'책임',en:'Responsibility',d:'ex',desc:'맡은 일에 대해 심리적으로 책임을 집니다. 약속을 하면 반드시 지키려 하며, 어떤 이유로든 이행할 수 없다면 죄책감과 자기비판을 경험합니다. 이 헌신이 강한 윤리 의식을 만들어내며, 주변 사람들로부터 신뢰할 수 있는 사람으로 인식됩니다.',pros:'높은 신뢰성, 완벽한 완수, 강한 윤리 의식',cons:'과도한 책임감으로 번아웃 위험, 위임이 어려울 수 있음'},
@@ -671,10 +672,10 @@ let rChart=null,bChart=null;
 function openInputCur(){ openInput(curPerson); }
 
 function switchPTab(tab){
-  ['str','chart','ai'].forEach(t=>{
-    document.getElementById('prof-'+t).style.display = t===tab?'block':'none';
-    document.getElementById('ptab-'+t).classList.toggle('on', t===tab);
-  });
+  document.getElementById('prof-str').style.display=tab==='str'?'flex':'none';
+  document.getElementById('prof-chart').style.display=tab==='chart'?'block':'none';
+  document.getElementById('prof-ai').style.display=tab==='ai'?'block':'none';
+  ['str','chart','ai'].forEach(t=>document.getElementById('ptab-'+t).classList.toggle('on',t===tab));
   if(tab==='chart') setTimeout(()=>{ const d=allData[curPerson]; if(d) drawCharts(d.top5); },80);
 }
 
@@ -750,7 +751,7 @@ function openProfile(name){
     </div>`:''}
   </div>`;
 
-  document.getElementById('prof-str').innerHTML=`<div style="display:flex;flex-direction:column;height:100%;gap:5px">${profileCard}${insightHtml}${cardsHtml}</div>`;
+  document.getElementById('prof-str').innerHTML=`${profileCard}${insightHtml}${cardsHtml}`;
 
   // 차트 탭
   document.getElementById('prof-chart').innerHTML=`<div style="padding:14px 18px 80px">
