@@ -228,6 +228,7 @@ const TEAMS = [
 
 const S = [
   {ko:'성취',en:'Achiever',d:'ex',desc:'매일 아침 새로운 에너지로 시작하며, 그 날 무언가를 성취해야 한다는 강한 내면의 욕구를 가지고 있습니다. 할 일 목록에 체크 표시를 하거나, 프로젝트를 완료하거나, 오랫동안 원하던 무언가를 달성할 때 만족감을 느낍니다. 쉬는 날에도 무언가를 해냈다는 느낌이 필요하며, 이 불꽃은 결코 완전히 꺼지지 않아 다음 목표를 향해 끊임없이 나아가게 합니다.',pros:'높은 생산성, 강한 자기동기부여, 팀에 에너지 전파',cons:'팀원에게 과도한 기대, 번아웃 위험, 쉬는 것을 죄책감으로 느낄 수 있음'},
+  {ko:'정리',en:'Arranger',d:'ex',desc:'복잡한 상황에서 사람과 자원을 최적으로 배치하는 능력이 탁월합니다. 여러 요소가 어떻게 조합될 수 있는지 항상 생각하며, 상황이 변화할 때 오히려 흥분감을 느낍니다. 최고의 생산성을 위해 인적 자원과 물적 자원을 정렬하고 재정렬하는 것에서 즐거움을 찾습니다.',pros:'뛰어난 실행력, 자원 최적화, 복잡한 프로젝트 조율',cons:'지나치게 복잡한 계획 수립, 단순한 상황에서 불만족'},
   {ko:'조율',en:'Arranger',d:'ex',desc:'복잡한 상황에서 사람과 자원을 최적으로 배치하는 능력이 탁월합니다. 여러 요소가 어떻게 조합될 수 있는지 항상 생각하며, 상황이 변화할 때 오히려 흥분감을 느낍니다. 최고의 생산성을 위해 인적 자원과 물적 자원을 정렬하고 재정렬하는 것에서 즐거움을 찾습니다.',pros:'뛰어난 실행력, 자원 최적화, 복잡한 프로젝트 조율',cons:'지나치게 복잡한 계획 수립, 단순한 상황에서 불만족'},
   {ko:'신념',en:'Belief',d:'ex',desc:'변하지 않는 핵심 가치를 가지고 있으며, 이 가치들이 삶의 의미와 방향을 제공합니다. 가족, 이타주의, 영성 등 특정 가치들이 삶의 나침반 역할을 합니다. 이 가치들이 높은 윤리 의식을 만들어내며, 어떤 대가를 치르더라도 자신이 중요하다고 생각하는 것을 위해 일하게 합니다.',pros:'강한 신뢰성, 일관된 행동, 명확한 삶의 기준',cons:'유연성 부족, 다른 견해 수용 어려움, 타협을 약점으로 볼 수 있음'},
   {ko:'일관성',en:'Consistency',d:'ex',desc:'모든 사람이 공평하게 대우받아야 한다고 믿으며, 명확한 규칙과 절차를 통해 이를 실현합니다. 편애나 특별 대우 없이 모두에게 동일한 기준을 적용하려 하며, 예측 가능하고 안정적인 환경을 만드는 데 기여합니다. 누군가가 규칙을 어기거나 특별 대우를 받을 때 불편함을 느낍니다.',pros:'공정함, 예측 가능한 행동, 안정적인 환경 조성',cons:'변화에 저항, 예외적 상황 처리 어려움, 융통성이 부족해 보일 수 있음'},
@@ -279,8 +280,16 @@ let ghToken=localStorage.getItem('ghStrToken')||'';
 let allData={}, fileSha='';
 let pendingSave=null;
 
+// 이름 변경 마이그레이션 맵
+const NAME_MIGRATE={'소통':'커뮤니케이션'};
+function migrateData(data){
+  Object.values(data).forEach(d=>{
+    if(d.top5) d.top5=d.top5.map(n=>NAME_MIGRATE[n]||n);
+  });
+  return data;
+}
 function loadLocalData(){
-  try{const raw=localStorage.getItem(LS_KEY);if(raw)return JSON.parse(raw);}catch{}return {};
+  try{const raw=localStorage.getItem(LS_KEY);if(raw)return migrateData(JSON.parse(raw));}catch{}return {};
 }
 function saveLocalData(data){
   try{localStorage.setItem(LS_KEY,JSON.stringify(data));}catch{}
@@ -297,7 +306,7 @@ async function loadData(){
     const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`,{headers:h});
     if(r.ok){
       const j=await r.json();fileSha=j.sha;
-      const ghData=JSON.parse(atob(j.content.replace(/\n/g,'')));
+      const ghData=migrateData(JSON.parse(atob(j.content.replace(/\n/g,''))));
       // GitHub 데이터와 로컬 데이터 병합 (더 최신 updatedAt 우선)
       Object.entries(ghData).forEach(([k,v])=>{
         if(!allData[k]||v.updatedAt>=(allData[k].updatedAt||'')) allData[k]=v;
