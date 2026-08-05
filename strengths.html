@@ -491,7 +491,7 @@ function renderTeamView(){
   members.forEach(({name,role})=>{
     const d=allData[name];
     let cells='';
-    if(d&&d.top5&&d.top5.length===5){
+    if(d&&d.top5&&d.top5.length>=5){
       d.top5.forEach((ko,i)=>{
         const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
         if(s)domCount[s.d]++;
@@ -549,7 +549,7 @@ function renderTeamView(){
 function renderTeamAnalysis(){
   const team=TEAMS.find(t=>t.id===curTeam);
   const members=[team.leader,...team.members];
-  const inputMembers=members.filter(m=>allData[m]?.top5?.length===5);
+  const inputMembers=members.filter(m=>allData[m]?.top5?.length>=5);
   const domCount={ex:0,in:0,re:0,st:0};
   const strCount={};
   const memberDoms={};
@@ -703,7 +703,7 @@ function setDomFilter(d){curDomFilter=d;renderInput();}
 function renderInput(){
   const area=document.getElementById('input-area');
   // 상단 선택 바
-  let html=`<div class="top5-bar" style="padding:7px 12px;margin-bottom:6px"><div class="top5-lbl" style="font-size:11px">선택된 강점 (${selTop5.length}/5)</div><div class="top5-tags" id="t5tags"></div></div>`;
+  let html=`<div class="top5-bar" style="padding:7px 12px;margin-bottom:6px"><div class="top5-lbl" style="font-size:11px">선택된 강점 (${selTop5.length}/10)</div><div class="top5-tags" id="t5tags"></div></div>`;
   // 도메인 필터 탭
   html+=`<div style="display:flex;gap:5px;padding:5px 12px 5px;overflow-x:auto;scrollbar-width:none;">
     <button class="tab${curDomFilter==='all'?' on':''}" onclick="setDomFilter('all')" style="padding:5px 11px;font-size:12px">전체</button>
@@ -730,8 +730,8 @@ function renderInput(){
     });
     html+=`</div></div>`;
   });
-  html+=`<button class="sub-btn ${selTop5.length===5?'ready':''}" id="sub-btn" ${selTop5.length!==5?'disabled':''} onclick="submitStr()">
-    ${selTop5.length===5?'✅ 저장하기':`상위 5개 선택 (${selTop5.length}/5)`}</button>`;
+  html+=`<button class="sub-btn ${selTop5.length===10?'ready':''}" id="sub-btn" ${selTop5.length!==10?'disabled':''} onclick="submitStr()">
+    ${selTop5.length===10?'✅ 저장하기':`상위 10개 선택 (${selTop5.length}/10)`}</button>`;
   area.innerHTML=html;
   renderT5Tags();
 }
@@ -743,11 +743,11 @@ function renderT5Tags(){
 function toggleChip(ko){
   const idx=selTop5.indexOf(ko);
   if(idx>=0)selTop5.splice(idx,1);
-  else{if(selTop5.length>=5){alert('이미 5개 선택됨. 하나를 먼저 취소하세요.');return;}selTop5.push(ko);}
+  else{if(selTop5.length>=10){alert('이미 10개 선택됨. 하나를 먼저 취소하세요.');return;}selTop5.push(ko);}
   renderInput();
 }
 async function submitStr(){
-  if(selTop5.length!==5)return;
+  if(selTop5.length!==10)return;
   const btn=document.getElementById('sub-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span>저장 중...';
   const ok=await saveData(curPerson,selTop5);
