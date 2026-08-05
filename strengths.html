@@ -244,6 +244,7 @@ const S = [
   {ko:'최대화',en:'Maximizer',d:'in',desc:'평균을 탁월함으로 변환하는 데 탁월합니다. 약점을 고치는 데 시간을 낭비하기보다는 강점을 더욱 발전시키는 것이 최선이라고 믿습니다. 개인과 그룹의 강점을 파악하고, 최고의 성과를 이끌어내는 방법을 찾습니다.',pros:'강점 극대화, 탁월한 품질 추구, 팀 능력 개발',cons:'약점 보완 무시, 평균적 성과에 만족 못함'},
   {ko:'자기확신',en:'Self-Assurance',d:'in',desc:'자신의 능력과 판단에 대한 강한 내면의 확신이 있습니다. 다른 사람들이 의구심을 품는 상황에서도 자신의 방향을 믿으며 나아갑니다. 이 자신감이 리스크를 감수하고 새로운 도전에 나서는 것을 가능하게 하며, 주변 사람들에게 안정감을 줍니다.',pros:'강한 의사결정력, 안정감 제공, 어려운 상황에서도 자신감 유지',cons:'다른 의견 무시, 오만하게 보일 수 있음'},
   {ko:'인정욕구',en:'Significance',d:'in',desc:'중요한 사람이 되고 싶어합니다. 사람들로부터 신뢰받고, 알려지고, 독립적이고 탁월한 존재로 인정받기를 원합니다. 이 열망이 높은 목표를 설정하고 뛰어난 성과를 추구하게 만드는 강력한 동력이 됩니다.',pros:'높은 성취 동기, 탁월함 추구, 자기 브랜딩',cons:'인정받지 못할 때 큰 좌절, 인정 욕구가 지나칠 수 있음'},
+  {ko:'사교성',en:'Woo',d:'in',desc:'Winning Others Over(타인을 설득함)의 약자입니다. 낯선 사람을 만나는 것을 즐기며, 그들이 편안함을 느끼도록 빠르게 공감대를 형성합니다. 대화의 실마리를 찾고 새로운 관계를 열어가는 것에서 만족감을 얻습니다.',pros:'뛰어난 네트워킹, 강한 첫인상, 새로운 기회 창출',cons:'깊은 관계 형성이 상대적으로 어려움, 가볍게 보일 수 있음'},
   {ko:'설득',en:'Woo',d:'in',desc:'Winning Others Over(타인을 설득함)의 약자입니다. 낯선 사람을 만나는 것을 즐기며, 그들이 편안함을 느끼도록 빠르게 공감대를 형성합니다. 대화의 실마리를 찾고 새로운 관계를 열어가는 것에서 만족감을 얻습니다.',pros:'뛰어난 네트워킹, 강한 첫인상, 새로운 기회 창출',cons:'깊은 관계 형성이 상대적으로 어려움, 가볍게 보일 수 있음'},
   {ko:'적응',en:'Adaptability',d:'re',desc:'현재를 살아가는 사람입니다. 미래는 아직 알 수 없으며, 매 순간 일어나는 요구에 유연하게 반응하며 만족감을 느낍니다. 예상치 못한 방향 전환도 위협이 아닌 흐름의 일부로 받아들이며, 변화 속에서도 높은 성과를 냅니다.',pros:'높은 유연성, 스트레스 내성, 변화 적응력',cons:'장기 계획 수립 어려움, 방향성 부족으로 보일 수 있음'},
   {ko:'연대',en:'Connectedness',d:'re',desc:'모든 것은 연결되어 있다고 믿습니다. 우연은 없으며, 모든 사건에는 이유가 있다고 생각합니다. 이 믿음이 경계를 넘어 사람들을 연결하게 하며, 팀 전체가 하나의 큰 목적을 위해 일하고 있다는 감각을 만들어냅니다.',pros:'큰 그림 이해, 팀 연대감 형성, 의미 부여',cons:'행동보다 의미 찾기 집중, 실용성이 떨어져 보일 수 있음'},
@@ -622,22 +623,41 @@ function renderTeamAnalysis(){
 }
 
 // ══════════════ INPUT ══════════════
+let curDomFilter='all';
 function openInput(name){
   curPerson=name;selTop5=allData[name]?.top5?[...allData[name].top5]:[];
+  curDomFilter='all';
   document.getElementById('input-hd').textContent=name+' · 강점 입력';
   renderInput();showScreen('s-input');
 }
+function setDomFilter(d){curDomFilter=d;renderInput();}
 function renderInput(){
   const area=document.getElementById('input-area');
-  let html=`<div class="top5-bar"><div class="top5-lbl">선택된 강점 (${selTop5.length}/5)</div><div class="top5-tags" id="t5tags"></div></div>`;
-  ['ex','in','re','st'].forEach(d=>{
-    const dom=DOM[d],list=S.filter(s=>s.d===d);
-    html+=`<div class="domain-block"><div class="domain-hd" style="background:${dom.bg}"><div class="d-dot" style="background:${dom.color}"></div><div class="d-name" style="color:${dom.color}">${dom.name}</div><div class="d-cnt">${list.length}개</div></div><div class="chip-grid">`;
+  // 상단 선택 바
+  let html=`<div class="top5-bar" style="padding:10px 14px"><div class="top5-lbl">선택된 강점 (${selTop5.length}/5)</div><div class="top5-tags" id="t5tags"></div></div>`;
+  // 도메인 필터 탭
+  html+=`<div style="display:flex;gap:6px;padding:8px 14px 6px;overflow-x:auto;scrollbar-width:none;">
+    <button class="tab${curDomFilter==='all'?' on':''}" onclick="setDomFilter('all')">전체</button>
+    ${['ex','in','re','st'].map(d=>`<button onclick="setDomFilter('${d}')" style="background:${curDomFilter===d?DOM[d].color:''};color:${curDomFilter===d?'#000':'var(--text2)'};border:none;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">${DOM[d].name}</button>`).join('')}
+  </div>`;
+  // 칩 그리드 (필터 적용, 2열)
+  const domains=curDomFilter==='all'?['ex','in','re','st']:[curDomFilter];
+  domains.forEach(d=>{
+    const dom=DOM[d];
+    // 중복 제거: 같은 en을 가진 항목은 하나만 표시 (체계/절제, 사교성/설득 등)
+    const seen=new Set();
+    const list=S.filter(s=>{if(s.d!==d)return false;const key=s.en+s.ko;if(seen.has(key))return false;seen.add(key);return true;});
+    if(curDomFilter==='all'){
+      html+=`<div style="padding:0 14px 4px"><div class="domain-hd" style="background:${dom.bg};margin-bottom:8px"><div class="d-dot" style="background:${dom.color}"></div><div class="d-name" style="color:${dom.color}">${dom.name}</div><div class="d-cnt">${list.length}개</div></div>`;
+      html+=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">`;
+    } else {
+      html+=`<div style="padding:0 14px"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">`;
+    }
     list.forEach(s=>{
       const rank=selTop5.indexOf(s.ko);const sel=rank>=0;
-      html+=`<div class="chip${sel?' sel':''}" id="c-${s.ko}" style="${sel?`background:${dom.color};border-color:${dom.color};`:''}" onclick="toggleChip('${s.ko}')">
+      html+=`<div class="chip${sel?' sel':''}" id="c-${s.ko}" style="padding:14px 8px;${sel?`background:${dom.color};border-color:${dom.color};`:''}" onclick="toggleChip('${s.ko}')">
         ${sel?`<div class="chip-rank">${rank+1}</div>`:''}
-        <span class="chip-ko">${s.ko}</span><span class="chip-en">${s.en}</span></div>`;
+        <span class="chip-ko" style="font-size:14px">${s.ko}</span><span class="chip-en">${s.en}</span></div>`;
     });
     html+=`</div></div>`;
   });
