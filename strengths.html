@@ -34,18 +34,18 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 .badge-done{background:#22c55e22;color:#22c55e;}
 .badge-empty{background:var(--surface2);color:var(--text3);}
 /* Chip grid */
-.domain-block{margin-bottom:16px;}
-.domain-hd{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;margin-bottom:10px;}
-.d-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.d-name{font-size:13px;font-weight:700;}
+.domain-block{margin-bottom:10px;}
+.domain-hd{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;margin-bottom:6px;}
+.d-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.d-name{font-size:12px;font-weight:700;}
 .d-cnt{font-size:12px;color:var(--text3);margin-left:auto;}
 .chip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.chip{background:var(--surface);border:1.5px solid var(--surface2);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .15s;position:relative;user-select:none;}
+.chip{background:var(--surface);border:1.5px solid var(--surface2);border-radius:10px;padding:7px 6px;text-align:center;cursor:pointer;transition:all .15s;position:relative;user-select:none;}
 .chip:hover{border-color:var(--text3);}
 .chip.sel{color:#fff;}
-.chip-rank{position:absolute;top:5px;right:5px;font-size:10px;font-weight:800;width:17px;height:17px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;}
-.chip-ko{font-size:13px;font-weight:600;display:block;}
-.chip-en{font-size:9px;color:var(--text3);display:block;margin-top:2px;}
+.chip-rank{position:absolute;top:3px;right:4px;font-size:9px;font-weight:800;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;}
+.chip-ko{font-size:12px;font-weight:600;display:block;}
+.chip-en{font-size:9px;color:var(--text3);display:block;margin-top:1px;}
 .chip.sel .chip-en{color:rgba(255,255,255,0.55);}
 /* Top5 bar */
 .top5-bar{background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
@@ -634,11 +634,11 @@ function setDomFilter(d){curDomFilter=d;renderInput();}
 function renderInput(){
   const area=document.getElementById('input-area');
   // 상단 선택 바
-  let html=`<div class="top5-bar" style="padding:10px 14px"><div class="top5-lbl">선택된 강점 (${selTop5.length}/5)</div><div class="top5-tags" id="t5tags"></div></div>`;
+  let html=`<div class="top5-bar" style="padding:7px 12px;margin-bottom:6px"><div class="top5-lbl" style="font-size:11px">선택된 강점 (${selTop5.length}/5)</div><div class="top5-tags" id="t5tags"></div></div>`;
   // 도메인 필터 탭
-  html+=`<div style="display:flex;gap:6px;padding:8px 14px 6px;overflow-x:auto;scrollbar-width:none;">
-    <button class="tab${curDomFilter==='all'?' on':''}" onclick="setDomFilter('all')">전체</button>
-    ${['ex','in','re','st'].map(d=>`<button onclick="setDomFilter('${d}')" style="background:${curDomFilter===d?DOM[d].color:''};color:${curDomFilter===d?'#000':'var(--text2)'};border:none;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">${DOM[d].name}</button>`).join('')}
+  html+=`<div style="display:flex;gap:5px;padding:5px 12px 5px;overflow-x:auto;scrollbar-width:none;">
+    <button class="tab${curDomFilter==='all'?' on':''}" onclick="setDomFilter('all')" style="padding:5px 11px;font-size:12px">전체</button>
+    ${['ex','in','re','st'].map(d=>`<button onclick="setDomFilter('${d}')" style="background:${curDomFilter===d?DOM[d].color:''};color:${curDomFilter===d?'#000':'var(--text2)'};border:none;border-radius:20px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">${DOM[d].name}</button>`).join('')}
   </div>`;
   // 칩 그리드 (필터 적용, 2열)
   const domains=curDomFilter==='all'?['ex','in','re','st']:[curDomFilter];
@@ -648,16 +648,16 @@ function renderInput(){
     const seen=new Set();
     const list=S.filter(s=>{if(s.d!==d)return false;const key=s.en+s.ko;if(seen.has(key))return false;seen.add(key);return true;});
     if(curDomFilter==='all'){
-      html+=`<div style="padding:0 14px 4px"><div class="domain-hd" style="background:${dom.bg};margin-bottom:8px"><div class="d-dot" style="background:${dom.color}"></div><div class="d-name" style="color:${dom.color}">${dom.name}</div><div class="d-cnt">${list.length}개</div></div>`;
-      html+=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">`;
+      html+=`<div style="padding:0 12px 2px"><div class="domain-hd" style="background:${dom.bg};margin-bottom:5px"><div class="d-dot" style="background:${dom.color}"></div><div class="d-name" style="color:${dom.color}">${dom.name}</div><div class="d-cnt">${list.length}개</div></div>`;
+      html+=`<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">`;
     } else {
-      html+=`<div style="padding:0 14px"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">`;
+      html+=`<div style="padding:0 12px"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">`;
     }
     list.forEach(s=>{
       const rank=selTop5.indexOf(s.ko);const sel=rank>=0;
-      html+=`<div class="chip${sel?' sel':''}" id="c-${s.ko}" style="padding:14px 8px;${sel?`background:${dom.color};border-color:${dom.color};`:''}" onclick="toggleChip('${s.ko}')">
+      html+=`<div class="chip${sel?' sel':''}" id="c-${s.ko}" style="${sel?`background:${dom.color};border-color:${dom.color};`:''}" onclick="toggleChip('${s.ko}')">
         ${sel?`<div class="chip-rank">${rank+1}</div>`:''}
-        <span class="chip-ko" style="font-size:14px">${s.ko}</span><span class="chip-en">${s.en}</span></div>`;
+        <span class="chip-ko">${s.ko}</span><span class="chip-en">${s.en}</span></div>`;
     });
     html+=`</div></div>`;
   });
