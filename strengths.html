@@ -730,8 +730,8 @@ function renderInput(){
     });
     html+=`</div></div>`;
   });
-  html+=`<button class="sub-btn ${selTop5.length===10?'ready':''}" id="sub-btn" ${selTop5.length!==10?'disabled':''} onclick="submitStr()">
-    ${selTop5.length===10?'✅ 저장하기':`상위 10개 선택 (${selTop5.length}/10)`}</button>`;
+  html+=`<button class="sub-btn ${selTop5.length>=5?'ready':''}" id="sub-btn" ${selTop5.length<5?'disabled':''} onclick="submitStr()">
+    ${selTop5.length>=5?`✅ 저장하기 (${selTop5.length}개)`:`최소 5개 이상 선택 (${selTop5.length}/10)`}</button>`;
   area.innerHTML=html;
   renderT5Tags();
 }
@@ -747,7 +747,7 @@ function toggleChip(ko){
   renderInput();
 }
 async function submitStr(){
-  if(selTop5.length!==10)return;
+  if(selTop5.length<5)return;
   const btn=document.getElementById('sub-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span>저장 중...';
   const ok=await saveData(curPerson,selTop5);
