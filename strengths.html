@@ -138,6 +138,7 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   <header>
     <a href="index.html" class="btn-back">←</a>
     <div><div class="hd-title">💪 갤럽 강점 분석</div><div class="hd-sub">CliftonStrengths · 희망-실천 4기</div></div>
+    <button id="sync-all-btn" onclick="syncAllToGithub()" style="background:#1e3a5f;border:1px solid #3b82f6;color:#93c5fd;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">☁️ 전체 동기화</button>
   </header>
   <div class="tab-row" id="team-tabs"></div>
   <div class="scroll" id="member-list"></div>
@@ -340,9 +341,16 @@ async function syncGithub(name){
     const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`,{method:'PUT',headers:h,body:JSON.stringify(body)});
     if(r.ok){const j=await r.json();fileSha=j.content.sha;return true;}
     if(r.status===409){await loadData();return await syncGithub(name);}
-    // GitHub 실패해도 로컬 저장은 됐으므로 true 반환
     console.warn('GitHub 동기화 실패, 로컬 저장됨');return true;
   }catch{console.warn('네트워크 오류, 로컬 저장됨');return true;}
+}
+async function syncAllToGithub(){
+  const btn=document.getElementById('sync-all-btn');
+  if(!ghToken){pendingSave=()=>syncAllToGithub();document.getElementById('tok-modal').classList.add('open');return;}
+  btn.textContent='⏳ 동기화 중...';btn.disabled=true;
+  const ok=await syncGithub('전체동기화');
+  btn.textContent=ok?'✅ 완료':'❌ 실패';
+  setTimeout(()=>{btn.textContent='☁️ 전체 동기화';btn.disabled=false;},2000);
 }
 
 function saveToken(){
