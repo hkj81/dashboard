@@ -498,7 +498,7 @@ function renderTeamView(){
         cells+=`<td><span class="tv-chip" style="background:${dom.bg};color:${dom.color}" onclick="openStrModal('${ko}',${i+1})">${ko}</span></td>`;
       });
     }else{
-      cells=`<td colspan="5" style="text-align:center"><span class="tv-empty">미입력</span></td>`;
+      cells=`<td colspan="10" style="text-align:center"><span class="tv-empty">미입력</span></td>`;
     }
     const roleColor=role==='팀장'?'#f59e0b':'var(--text3)';
     rows+=`<tr>
@@ -525,7 +525,7 @@ function renderTeamView(){
       <div class="tv-wrap">
         <table class="tv-table">
           <thead><tr>
-            <th>팀원</th><th>1위</th><th>2위</th><th>3위</th><th>4위</th><th>5위</th>
+            <th>팀원</th><th>1위</th><th>2위</th><th>3위</th><th>4위</th><th>5위</th><th>6위</th><th>7위</th><th>8위</th><th>9위</th><th>10위</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -564,7 +564,7 @@ function renderTeamAnalysis(){
   const total=Object.values(domCount).reduce((a,b)=>a+b,0);
   const coveredDoms=Object.entries(domCount).filter(([,v])=>v>0).map(([k])=>k);
   const missingDoms=['ex','in','re','st'].filter(d=>!coveredDoms.includes(d));
-  const topStr=Object.entries(strCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topStr=Object.entries(strCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
   const dominant=total>0?Object.entries(domCount).sort((a,b)=>b[1]-a[1])[0][0]:'ex';
   const teamType=TEAM_TYPES[dominant];
 
@@ -589,7 +589,8 @@ function renderTeamAnalysis(){
     const type=STRENGTH_TYPES[dom];
     const blind=getBlindSpots(top5);
     const partner=getBestPartner(name,curTeam);
-    const weakWarning=blind.length>=2;
+    const strengthCount=allData[name].top5.length;
+    const weakWarning=blind.length>=(strengthCount>=8?3:2);
     return{name,type,blind,partner,weakWarning,dom};
   });
 
@@ -613,7 +614,7 @@ function renderTeamAnalysis(){
 
   // 도메인 커버리지
   html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
-    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">🗂️ 도메인 커버리지 (${coveredDoms.length}/4)</div>
+    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">🗂️ 도메인 커버리지 (${coveredDoms.length}/4) · 총 ${total}개 강점</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
       ${['ex','in','re','st'].map(d=>{
         const v=domCount[d];const covered=v>0;
