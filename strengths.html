@@ -974,8 +974,10 @@ ${top5Info}
       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.8,maxOutputTokens:2000}})
     });
     if(!r.ok){
-      if(r.status===400||r.status===401||r.status===403){geminiKey='';localStorage.removeItem('geminiKey');throw new Error('API 키 오류');}
-      throw new Error('API 오류 '+r.status);
+      const errBody=await r.json().catch(()=>({}));
+      const errMsg=errBody?.error?.message||'';
+      if(r.status===400||r.status===401||r.status===403){geminiKey='';localStorage.removeItem('geminiKey');throw new Error('API 키 오류: '+errMsg);}
+      throw new Error(`API 오류 ${r.status}: ${errMsg}`);
     }
     const data=await r.json();
     let text=data.candidates?.[0]?.content?.parts?.[0]?.text||'분석 결과를 가져오지 못했습니다.';
