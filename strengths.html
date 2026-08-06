@@ -209,9 +209,9 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 <!-- GEMINI KEY MODAL -->
 <div class="modal" id="ai-modal">
   <div class="modal-box">
-    <div class="modal-title">🤖 Google AI API 키</div>
-    <div class="modal-desc">AI 분석을 사용하려면 Gemini API 키가 필요합니다. <strong style="color:#22c55e">하루 1,500번 무료</strong><br>
-    <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#3b82f6">→ 키 발급 바로가기</a></div>
+    <div class="modal-title">🤖 Groq API 키</div>
+    <div class="modal-desc">AI 분석을 사용하려면 Groq API 키가 필요합니다. <strong style="color:#22c55e">완전 무료 · 한국 사용 가능</strong><br>
+    <a href="https://console.groq.com/keys" target="_blank" style="color:#3b82f6">→ 키 발급 바로가기 (console.groq.com)</a></div>
     <input class="modal-input" id="ai-key-input" type="text" placeholder="API 키 붙여넣기">
     <button class="modal-btn" onclick="saveAiKey()">저장하고 분석 시작</button>
     <button class="modal-cancel" onclick="document.getElementById('ai-modal').classList.remove('open')">취소</button>
@@ -969,9 +969,10 @@ ${top5Info}
 이 사람과 효과적으로 협업하는 방법을 실용적이고 구체적으로 설명하세요.`;
 
   try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${geminiKey}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.8,maxOutputTokens:2000}})
+    const r=await fetch(`https://api.groq.com/openai/v1/chat/completions`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+geminiKey},
+      body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'user',content:prompt}],temperature:0.8,max_tokens:2000})
     });
     if(!r.ok){
       const errBody=await r.json().catch(()=>({}));
@@ -980,7 +981,7 @@ ${top5Info}
       throw new Error(`API 오류 ${r.status}: ${errMsg}`);
     }
     const data=await r.json();
-    let text=data.candidates?.[0]?.content?.parts?.[0]?.text||'분석 결과를 가져오지 못했습니다.';
+    let text=data.choices?.[0]?.message?.content||'분석 결과를 가져오지 못했습니다.';
     text=text
       .replace(/### (.+)/g,'<h3 style="color:#a78bfa;font-size:14px;margin:16px 0 6px">$1</h3>')
       .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#f1f5f9">$1</strong>')
