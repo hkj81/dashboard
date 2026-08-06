@@ -21,16 +21,16 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 .tab{background:var(--surface);border:none;border-radius:20px;color:var(--text2);padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
 .tab.on{background:var(--text);color:var(--bg);}
 /* Person card */
-.p-card{background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;border:1.5px solid transparent;}
+.p-card{background:var(--surface);border-radius:12px;padding:9px 12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;border:1.5px solid transparent;}
 .p-card:hover{background:var(--surface2);}
 .p-card.done{border-color:var(--surface2);}
 .p-avatar{width:38px;height:38px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
 .p-info{flex:1;}
-.p-name{font-size:15px;font-weight:700;}
-.p-role{font-size:11px;color:var(--text3);margin-top:2px;}
-.mini-tags{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
-.mini-tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;}
-.p-badge{font-size:11px;padding:3px 8px;border-radius:10px;flex-shrink:0;}
+.p-name{font-size:14px;font-weight:700;}
+.p-role{font-size:10px;color:var(--text3);margin-top:1px;}
+.mini-tags{margin-top:4px;display:flex;gap:3px;flex-wrap:wrap;}
+.mini-tag{font-size:10px;padding:2px 6px;border-radius:7px;font-weight:600;}
+.p-badge{font-size:10px;padding:3px 7px;border-radius:10px;flex-shrink:0;}
 .badge-done{background:#22c55e22;color:#22c55e;}
 .badge-empty{background:var(--surface2);color:var(--text3);}
 /* Chip grid */
@@ -119,13 +119,13 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 .tv-btn{background:var(--surface2);border:none;border-radius:20px;color:var(--text2);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
 .tv-btn.on{background:#22c55e22;color:#22c55e;border:1.5px solid #22c55e44;}
 .tv-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;background:var(--surface);}
-.tv-table{border-collapse:collapse;width:100%;min-width:440px;}
-.tv-table th{background:var(--surface2);padding:9px 8px;font-size:11px;font-weight:700;color:var(--text3);text-align:center;white-space:nowrap;}
-.tv-table th:first-child{text-align:left;padding-left:14px;min-width:72px;}
-.tv-table td{padding:7px 6px;border-bottom:1px solid var(--surface2);text-align:center;vertical-align:middle;}
-.tv-table td:first-child{text-align:left;padding-left:14px;}
+.tv-table{border-collapse:collapse;width:100%;table-layout:fixed;}
+.tv-table th{background:var(--surface2);padding:6px 3px;font-size:10px;font-weight:700;color:var(--text3);text-align:center;white-space:nowrap;}
+.tv-table th:first-child{text-align:left;padding-left:10px;width:54px;}
+.tv-table td{padding:5px 3px;border-bottom:1px solid var(--surface2);text-align:center;vertical-align:middle;}
+.tv-table td:first-child{text-align:left;padding-left:10px;}
 .tv-table tr:last-child td{border-bottom:none;}
-.tv-chip{display:inline-block;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.tv-chip{display:inline-block;padding:3px 5px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
 .tv-chip:hover{opacity:.75;}
 .tv-empty{font-size:10px;color:var(--text3);}
 
@@ -505,7 +505,7 @@ function renderTeamView(){
     }
     const roleColor=role==='팀장'?'#f59e0b':'var(--text3)';
     rows+=`<tr>
-      <td><div style="font-size:13px;font-weight:700">${name}</div><div style="font-size:10px;color:${roleColor}">${role}</div></td>
+      <td><div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div><div style="font-size:9px;color:${roleColor}">${role}</div></td>
       ${cells}
     </tr>`;
   });
@@ -524,7 +524,7 @@ function renderTeamView(){
   ).join(''):'';
 
   document.getElementById('tv-content').innerHTML=`
-    <div style="padding:14px 18px 100px">
+    <div style="padding:8px 10px 100px">
       <div class="tv-wrap">
         <table class="tv-table">
           <thead><tr>
