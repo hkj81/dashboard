@@ -264,6 +264,7 @@ const S = [
   {ko:'긍정',en:'Positivity',d:'re',desc:'열정이 넘치며, 어떤 상황에서도 좋은 면을 찾으려 합니다. 삶의 밝은 면을 보고, 이 활기찬 에너지로 다른 사람들에게 영감을 줍니다. 생산성을 높이고 창의성을 자극하는 긍정적인 환경을 만드는 데 기여합니다.',pros:'팀 사기 진작, 낙관적 에너지, 창의적 환경 조성',cons:'현실적 문제 직시 어려움, 위험 신호를 과소평가할 수 있음'},
   {ko:'절친',en:'Relator',d:'re',desc:'이미 신뢰가 쌓인 가까운 관계에서 더 큰 힘을 얻습니다. 깊고 오래가는 우정을 중요하게 여기고, 처음 보는 사람보다 잘 아는 사람과 있을 때 편안함을 느낍니다. 절친 테마가 강한 사람들은 이미 알고 있는 사람들에게 끌리지만, 꼭 새로운 사람을 피하는 것은 아닙니다. 친한 친구들에게서 많은 기쁨과 힘을 얻으며, 사람들과 깊고 친밀한 관계를 형성합니다.',pros:'강한 신뢰 관계, 깊은 협력, 오래 지속되는 팀워크',cons:'새로운 관계 형성이 느릴 수 있음, 처음에는 차갑게 보일 수 있음'},
   {ko:'분석',en:'Analytical',d:'st',desc:'"왜 그런가?"라고 끊임없이 질문합니다. 이유와 원인, 근거를 찾으며, 주장이나 이론을 뒷받침하는 데이터와 증거를 요구합니다. 감정이나 직관보다 논리와 사실에 기반한 결정을 선호하며, 복잡한 상황의 본질을 꿰뚫어 봅니다.',pros:'정확한 판단, 근거 기반 의사결정, 논리적 설득력',cons:'분석이 길어져 결정 지연, 직관을 무시해 기회를 놓칠 수 있음'},
+  {ko:'회고',en:'Context',d:'st',desc:'현재를 이해하기 위해 과거를 돌아봅니다. 역사를 연구하고 패턴을 찾으며, 오늘의 결정이 과거 경험에 의해 어떻게 형성되었는지 이해합니다. 이 관점이 더 나은 미래를 만들기 위한 현명한 결정을 내리도록 돕습니다.',pros:'깊은 이해력, 실수 예방, 풍부한 경험 활용',cons:'과거에 집착해 변화 거부, 새로운 시도에 저항할 수 있음'},
   {ko:'맥락',en:'Context',d:'st',desc:'현재를 이해하기 위해 과거를 돌아봅니다. 역사를 연구하고 패턴을 찾으며, 오늘의 결정이 과거 경험에 의해 어떻게 형성되었는지 이해합니다. 이 관점이 더 나은 미래를 만들기 위한 현명한 결정을 내리도록 돕습니다.',pros:'깊은 이해력, 실수 예방, 풍부한 경험 활용',cons:'과거에 집착해 변화 거부, 새로운 시도에 저항할 수 있음'},
   {ko:'미래지향',en:'Futuristic',d:'st',desc:'"만약 ~이 된다면 어떨까?"라는 질문에서 영감을 얻습니다. 미래의 가능성을 선명하게 그릴 수 있으며, 이 비전이 현재의 어려움을 극복하는 힘이 됩니다. 팀에 더 나은 미래의 모습을 보여주어 희망과 방향감을 제공합니다.',pros:'강력한 비전 제시, 혁신 추구, 팀에 희망 부여',cons:'현재 실무에 집중 어려움, 현실성 없는 목표를 설정할 수 있음'},
   {ko:'발상',en:'Ideation',d:'st',desc:'아이디어에 매력을 느낍니다. 겉으로는 달라 보이는 현상들 사이의 연결고리를 발견할 때 흥분됩니다. 이 능력이 새로운 관점으로 익숙한 문제를 바라보게 하며, 혁신적인 해결책을 제시합니다.',pros:'창의성, 혁신적 발상, 다양한 관점 제공',cons:'실행보다 아이디어에 머무를 수 있음, 아이디어가 너무 많아 집중력 저하'},
@@ -307,20 +308,25 @@ async function loadData(){
   // 로컬 먼저 적용 (즉시 표시)
   allData=loadLocalData();
   renderHome();
-  // GitHub에서 최신 데이터 가져오기
+  // GitHub raw URL로 데이터 읽기 (public repo: 토큰 불필요)
   try{
-    const h={'Accept':'application/vnd.github.v3+json'};
-    if(ghToken) h['Authorization']='token '+ghToken;
-    const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`,{headers:h});
+    const rawUrl=`https://raw.githubusercontent.com/${REPO}/main/${DFILE}?t=${Date.now()}`;
+    const r=await fetch(rawUrl);
     if(r.ok){
-      const j=await r.json();fileSha=j.sha;
-      const ghData=migrateData(JSON.parse(atob(j.content.replace(/\n/g,''))));
+      const ghData=migrateData(await r.json());
       // GitHub 데이터와 로컬 데이터 병합 (더 최신 updatedAt 우선)
       Object.entries(ghData).forEach(([k,v])=>{
         if(!allData[k]||v.updatedAt>=(allData[k].updatedAt||'')) allData[k]=v;
       });
       saveLocalData(allData);
       renderHome();
+      // SHA는 쓰기용으로 별도 확인
+      if(ghToken){
+        try{
+          const ar=await fetch(`https://api.github.com/repos/${REPO}/contents/${DFILE}`,{headers:{'Authorization':'token '+ghToken,'Accept':'application/vnd.github.v3+json'}});
+          if(ar.ok){const aj=await ar.json();fileSha=aj.sha;}
+        }catch{}
+      }
     }
   }catch{}
 }
