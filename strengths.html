@@ -81,6 +81,22 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
 .pros-box .box-label{color:#22c55e;}
 .cons-box .box-label{color:#ef4444;}
 .box-content{font-size:12px;color:var(--text2);line-height:1.5;}
+/* AI Chat */
+.chat-wrap{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px;}
+.chat-bubble{max-width:85%;border-radius:16px;padding:11px 14px;font-size:13px;line-height:1.6;word-break:break-word;}
+.chat-bubble.user{align-self:flex-end;background:#3b82f6;color:#fff;border-bottom-right-radius:4px;}
+.chat-bubble.ai{align-self:flex-start;background:var(--surface);color:var(--text);border-bottom-left-radius:4px;}
+.chat-bubble.ai h3{color:#a78bfa;font-size:13px;margin:10px 0 3px;}
+.chat-bubble.thinking{align-self:flex-start;background:var(--surface);color:var(--text3);font-style:italic;}
+.chat-input-row{padding:10px 14px;background:var(--bg);border-top:1px solid var(--surface);display:flex;gap:8px;align-items:flex-end;}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--surface2);border-radius:14px;color:var(--text);padding:10px 14px;font-size:13px;resize:none;min-height:42px;max-height:100px;font-family:inherit;outline:none;}
+.chat-input:focus{border-color:#3b82f6;}
+.chat-send{background:#3b82f6;border:none;border-radius:12px;color:#fff;width:42px;height:42px;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.chat-send:disabled{background:var(--surface2);cursor:not-allowed;}
+.chat-chips{display:flex;gap:6px;padding:8px 14px 0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;}
+.chat-chips::-webkit-scrollbar{display:none;}
+.chat-chip{background:var(--surface);border:1px solid var(--surface2);border-radius:20px;color:var(--text2);padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.chat-chip:hover{border-color:#3b82f6;color:#3b82f6;}
 /* Chart */
 .chart-box{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:14px;}
 .chart-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;}
@@ -181,9 +197,26 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   <div style="display:flex;border-bottom:1px solid var(--surface);">
     <button class="prof-tab on" id="tvtab-members" onclick="switchTVTab('members')">👥 멤버 현황</button>
     <button class="prof-tab" id="tvtab-analysis" onclick="switchTVTab('analysis')">📊 팀 분석</button>
+    <button class="prof-tab" id="tvtab-aichat" onclick="openAIChat('team')" style="color:#a78bfa">🤖 AI질문</button>
   </div>
   <div class="scroll" id="tv-content"></div>
   <div class="scroll" id="tv-analysis" style="display:none"></div>
+</div>
+
+<!-- AI CHAT SCREEN -->
+<div class="screen" id="s-aichat" style="height:100vh">
+  <header>
+    <button class="btn-back" onclick="goHome()">←</button>
+    <div><div class="hd-title" id="aichat-hd">🤖 AI 팀 질문</div><div class="hd-sub" id="aichat-sub">강점 기반 팀 추천 · 프로젝트 구성</div></div>
+  </header>
+  <div class="chat-chips" id="chat-chips"></div>
+  <div class="chat-wrap" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <textarea class="chat-input" id="chat-input" placeholder="질문을 입력하세요..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIChat()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button class="chat-send" id="chat-send-btn" onclick="sendAIChat()">↑</button>
+  </div>
 </div>
 
 <!-- STRENGTH DETAIL MODAL -->
@@ -444,6 +477,9 @@ function initTabs(){
   const sep=document.createElement('div');sep.className='tv-sep';row.appendChild(sep);
   const tv=document.createElement('button');tv.className='tv-btn';tv.textContent='📋 한눈보기';
   tv.onclick=()=>showTeamView();row.appendChild(tv);
+  const ai=document.createElement('button');ai.className='tv-btn';ai.textContent='🤖 AI질문';
+  ai.style.cssText='background:linear-gradient(135deg,#4c1d95,#1e3a5f);border:1px solid #7c3aed;color:#a78bfa;';
+  ai.onclick=()=>openAIChat('all');row.appendChild(ai);
 }
 function renderHome(){initTabs();renderMemberList();}
 function renderMemberList(){
@@ -1056,6 +1092,107 @@ ${top5Info}
   }catch(e){
     el.innerHTML=`<div style="color:#ef4444;font-size:13px;padding:10px">오류: ${e.message}</div>`;
   }
+}
+
+// ══════════════ AI CHAT ══════════════
+let chatScope='all'; // 'all' or 'team'
+let chatHistory=[];
+let chatTeamName='';
+
+const CHAT_SUGGESTIONS_ALL=[
+  '6개월 장기 프로젝트 팀 구성 추천해줘',
+  '1박2일 워크숍 팀 짜줘',
+  '신규 거래처 개척에 맞는 팀원은?',
+  '리더십 강한 팀원 추천해줘',
+  '관계 구축 잘하는 팀원은 누구야?',
+  '실행력 강한 팀원 알려줘',
+];
+const CHAT_SUGGESTIONS_TEAM=[
+  '이 팀의 강점 조합 분석해줘',
+  '이 팀에서 리더 역할에 맞는 사람은?',
+  '이 팀의 단점/보완할 점은?',
+  '이 팀원들이 잘 맞는 프로젝트 유형은?',
+];
+
+function buildTeamContext(scope){
+  const members=scope==='all'
+    ? TEAMS.flatMap(t=>[{name:t.leader,team:t.id,role:'팀장'},...t.members.map(m=>({name:m,team:t.id,role:'팀원'}))])
+    : (()=>{const t=TEAMS.find(x=>x.id===curTeam);return t?[{name:t.leader,team:t.id,role:'팀장'},...t.members.map(m=>({name:m,team:t.id,role:'팀원'}))]:[]; })();
+
+  const lines=members.map(({name,team,role})=>{
+    const d=allData[name];
+    if(!d||!d.top5||d.top5.length===0) return `${name}(${team} ${role}): 데이터 없음`;
+    const strengths=d.top5.map((ko,i)=>{const s=S.find(x=>x.ko===ko);return`${i+1}위 ${ko}(${DOM[s?.d||'ex'].name})`;}).join(', ');
+    return `${name}(${team} ${role}): ${strengths}`;
+  }).join('\n');
+
+  return `당신은 갤럽 CliftonStrengths 전문 코치입니다. 아래는 희망-실천 4기 영업팀의 강점 데이터입니다.\n\n[팀원 강점 현황]\n${lines}\n\n강점 도메인 설명:\n- 실행력(Executing): 일을 완수하는 힘\n- 영향력(Influencing): 사람을 움직이는 힘\n- 관계구축(Relationship Building): 연결하고 신뢰 쌓는 힘\n- 전략적사고(Strategic Thinking): 분석하고 방향 잡는 힘\n\n위 데이터를 기반으로 질문에 답해주세요. 팀 구성 추천 시 반드시 이름을 명시하고, 각 사람의 강점을 근거로 설명해주세요. 한국어로 간결하고 실용적으로 답변해주세요.`;
+}
+
+function openAIChat(scope){
+  chatScope=scope;
+  chatTeamName=scope==='team'?curTeam:'전체 팀';
+  chatHistory=[];
+  document.getElementById('aichat-hd').textContent=scope==='team'?`🤖 ${chatTeamName} AI질문`:'🤖 AI 팀 질문';
+  document.getElementById('aichat-sub').textContent=scope==='team'?`${chatTeamName} 강점 기반 분석`:'영업부 전체 강점 기반 분석';
+  // 추천 질문 칩
+  const chips=scope==='all'?CHAT_SUGGESTIONS_ALL:CHAT_SUGGESTIONS_TEAM;
+  document.getElementById('chat-chips').innerHTML=chips.map(q=>`<button class="chat-chip" onclick="setChatInput('${q}')">${q}</button>`).join('');
+  // 첫 메시지
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML=`<div class="chat-bubble ai">안녕하세요! 💪 ${chatTeamName} 강점 데이터를 기반으로 답변해드릴게요.<br><br>프로젝트 팀 구성, 역할 추천, 협업 방법 등 무엇이든 질문해보세요!</div>`;
+  document.getElementById('chat-input').value='';
+  showScreen('s-aichat');
+}
+
+function setChatInput(text){
+  const inp=document.getElementById('chat-input');
+  inp.value=text;inp.style.height='auto';inp.style.height=inp.scrollHeight+'px';inp.focus();
+}
+
+async function sendAIChat(){
+  const inp=document.getElementById('chat-input');
+  const q=inp.value.trim();if(!q)return;
+  if(!geminiKey){pendingAI=()=>sendAIChat();document.getElementById('ai-modal').classList.add('open');return;}
+
+  const msgs=document.getElementById('chat-messages');
+  // 사용자 말풍선
+  msgs.innerHTML+=`<div class="chat-bubble user">${q.replace(/\n/g,'<br>')}</div>`;
+  inp.value='';inp.style.height='auto';
+  // 로딩
+  const thinkId='think-'+Date.now();
+  msgs.innerHTML+=`<div class="chat-bubble thinking" id="${thinkId}">⏳ 분석 중...</div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  document.getElementById('chat-send-btn').disabled=true;
+
+  chatHistory.push({role:'user',content:q});
+
+  const systemPrompt=buildTeamContext(chatScope);
+  const messages=[{role:'system',content:systemPrompt},...chatHistory.slice(-6)];
+
+  try{
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+geminiKey},
+      body:JSON.stringify({model:'llama-3.1-8b-instant',messages,temperature:0.7,max_tokens:1500})
+    });
+    if(!r.ok){
+      const e=await r.json().catch(()=>({}));
+      if(r.status===401||r.status===403){geminiKey='';localStorage.removeItem('geminiKey');}
+      throw new Error(e?.error?.message||'API 오류');
+    }
+    const data=await r.json();
+    const text=data.choices?.[0]?.message?.content||'답변을 가져오지 못했습니다.';
+    chatHistory.push({role:'assistant',content:text});
+    document.getElementById(thinkId)?.remove();
+    const formatted=text.replace(/### (.*)/g,'<h3>$1</h3>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    msgs.innerHTML+=`<div class="chat-bubble ai">${formatted}</div>`;
+  }catch(e){
+    document.getElementById(thinkId)?.remove();
+    msgs.innerHTML+=`<div class="chat-bubble ai" style="color:#ef4444">오류: ${e.message}</div>`;
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+  document.getElementById('chat-send-btn').disabled=false;
 }
 
 // ══════════════ INIT ══════════════
