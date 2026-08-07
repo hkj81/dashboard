@@ -198,6 +198,7 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
     <button class="prof-tab on" id="tvtab-members" onclick="switchTVTab('members')">👥 멤버 현황</button>
     <button class="prof-tab" id="tvtab-analysis" onclick="switchTVTab('analysis')">📊 팀 분석</button>
     <button class="prof-tab" id="tvtab-aichat" onclick="openAIChat('team')" style="color:#a78bfa">🤖 AI질문</button>
+
   </div>
   <div class="scroll" id="tv-content"></div>
   <div class="scroll" id="tv-analysis" style="display:none"></div>
@@ -483,7 +484,7 @@ function initTabs(){
   const sep=document.createElement('div');sep.className='tv-sep';row.appendChild(sep);
   const tv=document.createElement('button');tv.className='tv-btn';tv.textContent='📋 한눈보기';
   tv.onclick=()=>showTeamView();row.appendChild(tv);
-  const ai=document.createElement('button');ai.className='tv-btn';ai.textContent='🤖 AI질문';
+  const ai=document.createElement('button');ai.className='tv-btn';ai.textContent='🤖 영업부 AI질문';
   ai.style.cssText='background:linear-gradient(135deg,#4c1d95,#1e3a5f);border:1px solid #7c3aed;color:#a78bfa;';
   ai.onclick=()=>openAIChat('all');row.appendChild(ai);
 }
@@ -582,6 +583,9 @@ function getBestPartner(name,teamId){
 function showTeamView(){
   renderTeamView();
   renderTeamAnalysis();
+  // 팀 이름으로 AI질문 탭 업데이트
+  const aiTab=document.getElementById('tvtab-aichat');
+  if(aiTab) aiTab.textContent=`🤖 ${curTeam} AI질문`;
   showScreen('s-teamview');
 }
 function switchTVTab(tab){
