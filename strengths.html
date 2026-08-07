@@ -194,6 +194,12 @@ header{padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:
   </div>
 </div>
 
+<!-- THEME POPUP MODAL -->
+<div class="modal" id="theme-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" id="theme-modal-box" style="max-height:85vh;overflow-y:auto">
+  </div>
+</div>
+
 <!-- TOKEN MODAL -->
 <div class="modal" id="tok-modal">
   <div class="modal-box">
@@ -369,6 +375,59 @@ function saveToken(){
   if(pendingSave){pendingSave();pendingSave=null;}
 }
 function closeToken(){document.getElementById('tok-modal').classList.remove('open');}
+
+// ══════════════ THEME POPUP ══════════════
+function showThemePopup(ko){
+  const s=S.find(x=>x.ko===ko);
+  if(!s) return;
+  const dom=DOM[s.d];
+  // 이 테마를 가진 팀원 목록
+  const members=Object.entries(allData)
+    .filter(([,d])=>d.top5?.includes(ko))
+    .map(([name,d])=>{const rank=d.top5.indexOf(ko)+1;return{name,rank};})
+    .sort((a,b)=>a.rank-b.rank);
+
+  const box=document.getElementById('theme-modal-box');
+  box.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:44px;height:44px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+        ${s.d==='ex'?'⚡':s.d==='in'?'🔥':s.d==='re'?'💙':'💡'}
+      </div>
+      <div>
+        <div style="font-size:18px;font-weight:800;color:${dom.color}">${ko}</div>
+        <div style="font-size:12px;color:var(--text3)">${s.en} · ${dom.name}</div>
+      </div>
+      <button onclick="document.getElementById('theme-modal').classList.remove('open')"
+        style="margin-left:auto;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px">✕</button>
+    </div>
+
+    <div style="background:${dom.bg};border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.6">
+      ${s.desc}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:#22c55e15;border-radius:10px;padding:10px 12px">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;margin-bottom:5px">✅ 강점</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5">${s.pros}</div>
+      </div>
+      <div style="background:#ef444415;border-radius:10px;padding:10px 12px">
+        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:5px">⚠️ 주의</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.5">${s.cons}</div>
+      </div>
+    </div>
+
+    ${members.length>0?`
+    <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px">👥 이 강점을 가진 팀원 (${members.length}명)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${members.map(m=>`
+        <div style="background:${dom.bg};border:1px solid ${dom.color}44;border-radius:20px;padding:5px 12px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:800;color:${dom.color}">${m.rank}위</span>
+          <span style="font-size:13px;font-weight:700">${m.name}</span>
+        </div>`).join('')}
+    </div>`:''}
+  `;
+  document.getElementById('theme-modal').classList.add('open');
+}
 
 // ══════════════ NAV ══════════════
 let curTeam='1팀', curPerson='', selTop5=[];
@@ -642,12 +701,13 @@ function renderTeamAnalysis(){
   html+=`<div style="background:var(--surface);border-radius:14px;padding:14px;margin-bottom:14px">
     <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:10px">🏆 팀 공통 강점 TOP${topStr.length}</div>
     ${topStr.map(([ko,cnt],i)=>{const s=S.find(x=>x.ko===ko);const dom=DOM[s?.d||'ex'];
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+    return`<div onclick="showThemePopup('${ko}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2);cursor:pointer;transition:background .15s;border-radius:8px;padding:8px 6px" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
       <div style="width:22px;height:22px;border-radius:50%;background:${dom.bg};color:${dom.color};font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
       <div style="flex:1"><span style="font-size:13px;font-weight:700">${ko}</span><span style="font-size:10px;color:var(--text3);margin-left:6px">${s?.en||''}</span></div>
       <div style="display:flex;align-items:center;gap:6px">
         <div style="height:6px;border-radius:6px;width:${Math.round(cnt/inputMembers.length*80)+10}px;background:${dom.color};opacity:.7"></div>
         <span style="font-size:11px;font-weight:700;color:${dom.color}">${cnt}명</span>
+        <span style="font-size:10px;color:var(--text3)">›</span>
       </div>
     </div>`;}).join('')}
   </div>`;
