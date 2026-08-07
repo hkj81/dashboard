@@ -9,9 +9,9 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;--ex:#8b5cf6;--in:#f97316;--re:#3b82f6;--st:#22c55e;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',-apple-system,sans-serif;min-height:100vh;max-width:640px;margin:0 auto;}
-.screen{display:none;height:100dvh;flex-direction:column;}
+.screen{display:none;min-height:100dvh;flex-direction:column;}
 .screen.active{display:flex;}
-#s-home{overflow:hidden;}
+#s-home{height:100dvh;min-height:unset;overflow:hidden;}
 header{padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--surface);position:sticky;top:0;background:var(--bg);z-index:40;}
 .btn-back{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px 8px 4px 0;}
 .hd-title{font-size:17px;font-weight:800;flex:1;}
