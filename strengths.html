@@ -727,10 +727,11 @@ function renderTeamAnalysis(){
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
       ${['ex','in','re','st'].map(d=>{
         const v=domCount[d];const covered=v>0;
-        return`<div style="background:${covered?DOM[d].bg:'var(--surface2)'};border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;${covered?'':'opacity:.5'}">
+        return`<div onclick="showDomainPopup('${d}')" style="background:${covered?DOM[d].bg:'var(--surface2)'};border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;${covered?'':'opacity:.5'};cursor:pointer;transition:filter .15s" onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
           <div style="width:8px;height:8px;border-radius:50%;background:${DOM[d].color};flex-shrink:0"></div>
           <div style="flex:1"><div style="font-size:12px;font-weight:700;color:${covered?DOM[d].color:'var(--text3)'}">${DOM[d].name}</div>
           <div style="font-size:10px;color:var(--text3)">${covered?v+'개 강점':'미보유 ⚠️'}</div></div>
+          <div style="font-size:14px;color:var(--text3)">›</div>
         </div>`;}).join('')}
     </div>
     ${missingDoms.length>0?`<div style="margin-top:10px;padding:10px;background:#ef444415;border-radius:10px;border:1px solid #ef444430">
@@ -1098,6 +1099,99 @@ ${top5Info}
   }catch(e){
     el.innerHTML=`<div style="color:#ef4444;font-size:13px;padding:10px">오류: ${e.message}</div>`;
   }
+}
+
+// ══════════════ DOMAIN POPUP ══════════════
+const DOM_INFO={
+  ex:{
+    emoji:'⚡',en:'Executing',
+    desc:'목표를 세우면 반드시 해내는 힘입니다. 어떤 어려움이 있어도 끝까지 완수하며, 팀이 실질적인 결과를 만들어내도록 이끕니다.',
+    traits:['🎯 계획한 일을 끝까지 완수','🔄 책임감이 강하고 약속을 지킴','⚙️ 체계적이고 효율적으로 일함','💪 어려운 상황에서도 포기하지 않음'],
+    themes:['성취','조율','정리','심사숙고','신중','체계','집중','책임','신뢰','복구','회복'],
+  },
+  in:{
+    emoji:'🔥',en:'Influencing',
+    desc:'사람들을 움직이고 이끄는 힘입니다. 설득력과 에너지로 팀에 활력을 불어넣고, 더 큰 무대에서 성과를 만들어냅니다.',
+    traits:['🗣️ 설득력 있게 의견을 전달','🚀 도전을 두려워하지 않고 추진','🌟 자신감 있게 팀을 이끔','📣 더 많은 사람에게 영향을 미침'],
+    themes:['행동','지도력','경쟁','승부','커뮤니케이션','최상화','최대화','긍정성','긍정','자기확신','사교성'],
+  },
+  re:{
+    emoji:'💙',en:'Relationship Building',
+    desc:'사람과 사람을 연결하고 팀을 하나로 묶는 힘입니다. 신뢰와 유대감을 만들어 팀 전체가 그 이상의 성과를 내도록 돕습니다.',
+    traits:['🤝 깊은 신뢰 관계를 형성','💬 갈등을 조화롭게 해결','🫂 팀원을 배려하고 지지','🌐 다양한 사람과 잘 어울림'],
+    themes:['적응','연결성','개발','공감','화합','포용','공정성','일관성','개별화','절친','관계'],
+  },
+  st:{
+    emoji:'💡',en:'Strategic Thinking',
+    desc:'정보를 분석하고 미래 방향을 잡는 힘입니다. 큰 그림을 보고, 더 나은 결정을 내리도록 팀을 이끕니다.',
+    traits:['🔍 데이터와 상황을 깊이 분석','🗺️ 장기적 관점으로 방향 제시','💭 새로운 아이디어를 끊임없이 탐구','📚 배움과 성장을 즐김'],
+    themes:['분석','회고','맥락','미래지향','착상','발상','아이디어','학습','전략','사색','연결성'],
+  },
+};
+
+function showDomainPopup(d){
+  const dom=DOM[d];const info=DOM_INFO[d];
+  // 이 도메인 강점을 가진 팀원 (현재 팀 기준)
+  const team=TEAMS.find(t=>t.id===curTeam);
+  const allMembers=team?[team.leader,...team.members]:Object.keys(allData);
+  const memberThemes={};
+  allMembers.forEach(name=>{
+    const data=allData[name];
+    if(!data?.top5) return;
+    const themes=data.top5.filter(ko=>{const s=S.find(x=>x.ko===ko);return s?.d===d;});
+    if(themes.length>0) memberThemes[name]=themes;
+  });
+
+  // 이 팀이 보유한 해당 도메인 테마 목록
+  const teamThemes=[...new Set(Object.values(memberThemes).flat())];
+
+  const box=document.getElementById('theme-modal-box');
+  box.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:48px;height:48px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${info.emoji}</div>
+      <div>
+        <div style="font-size:20px;font-weight:800;color:${dom.color}">${dom.name}</div>
+        <div style="font-size:12px;color:var(--text3)">${info.en} Domain</div>
+      </div>
+      <button onclick="document.getElementById('theme-modal').classList.remove('open')"
+        style="margin-left:auto;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:4px">✕</button>
+    </div>
+
+    <div style="background:${dom.bg};border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.6">
+      ${info.desc}
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px">✨ 핵심 특성</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        ${info.traits.map(t=>`<div style="background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text2)">${t}</div>`).join('')}
+      </div>
+    </div>
+
+    ${teamThemes.length>0?`
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px">🏷️ ${curTeam}이 보유한 ${dom.name} 테마</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${teamThemes.map(ko=>`<span style="background:${dom.bg};border:1px solid ${dom.color}44;border-radius:16px;padding:4px 11px;font-size:12px;font-weight:700;color:${dom.color}">${ko}</span>`).join('')}
+      </div>
+    </div>`:''}
+
+    ${Object.keys(memberThemes).length>0?`
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px">👥 ${dom.name} 보유 팀원 (${Object.keys(memberThemes).length}명)</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${Object.entries(memberThemes).map(([name,themes])=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:10px">
+            <div style="width:28px;height:28px;border-radius:50%;background:${dom.bg};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${dom.color};flex-shrink:0">${name[0]}</div>
+            <div style="font-size:13px;font-weight:700;flex-shrink:0">${name}</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              ${themes.map(ko=>`<span style="background:${dom.bg};border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600;color:${dom.color}">${ko}</span>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`:'<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px">이 팀에는 ${dom.name} 도메인 강점이 없어요</div>'}
+  `;
+  document.getElementById('theme-modal').classList.add('open');
 }
 
 // ══════════════ AI CHAT ══════════════
