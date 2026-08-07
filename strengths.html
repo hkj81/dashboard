@@ -482,10 +482,12 @@ function initTabs(){
     b.onclick=()=>{curTeam=t.id;initTabs();renderMemberList();};row.appendChild(b);
   });
   const sep=document.createElement('div');sep.className='tv-sep';row.appendChild(sep);
+  const sharedBtnStyle='background:linear-gradient(135deg,#4c1d95,#1e3a5f);border:1px solid #7c3aed;color:#a78bfa;';
   const tv=document.createElement('button');tv.className='tv-btn';tv.textContent='📋 한눈보기';
+  tv.style.cssText=sharedBtnStyle;
   tv.onclick=()=>showTeamView();row.appendChild(tv);
   const ai=document.createElement('button');ai.className='tv-btn';ai.textContent='🤖 영업부 AI질문';
-  ai.style.cssText='background:linear-gradient(135deg,#4c1d95,#1e3a5f);border:1px solid #7c3aed;color:#a78bfa;';
+  ai.style.cssText=sharedBtnStyle;
   ai.onclick=()=>openAIChat('all');row.appendChild(ai);
 }
 function renderHome(){initTabs();renderMemberList();}
