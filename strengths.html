@@ -403,6 +403,13 @@ async function loadData(){
         geminiKey=allData._config.groqKey;
         localStorage.setItem('geminiKey',geminiKey);
       }
+      // PC에 키가 있는데 GitHub에 없으면 자동으로 업로드
+      if(geminiKey&&!allData._config?.groqKey&&ghToken){
+        if(!allData._config)allData._config={};
+        allData._config.groqKey=geminiKey;
+        saveLocalData(allData);
+        syncGithub('키자동동기화');
+      }
       renderHome();
       // SHA는 쓰기용으로 별도 확인
       if(ghToken){
