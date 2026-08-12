@@ -662,6 +662,70 @@ function calcGungHap(nameA, nameB){
   return{score,grade,gradeEmoji,gradeLabel,synPairs,friPairs,domsA:[...domsA],domsB:[...domsB],combined:[...combined],tips,enToKo,enToKoB,overlapCount};
 }
 
+// 시너지·마찰 쌍 클릭 시 상세 설명 생성
+function getPairDetail(ta, tb, koA, koB, type){
+  const a=TP[ta]||{}, b=TP[tb]||{};
+  const sA=S.find(x=>x.en===ta), sB=S.find(x=>x.en===tb);
+  const dA=sA?.d||'ex', dB=sB?.d||'ex';
+  const combo=[dA,dB].sort().join('-');
+  const SYN={
+    'ex-ex':{why:`두 실행형 강점이 만나면 팀에서 가장 빠르고 확실하게 목표를 달성합니다. 서로의 실행 방식을 인정하며 역할을 나누면 최강 파트너가 됩니다.`,scene:`마감 촉박 프로젝트에서 한 명이 전체를 정리·관리하면, 다른 한 명이 끝까지 완수해냅니다. "당신이 구조 잡으면 내가 끝냅니다" 사이클이 완성됩니다.`,tip:`역할 분담을 먼저 합의하세요. 둘 다 주도하려 하면 충돌이 생깁니다.`},
+    'ex-in':{why:`실행력과 영향력이 결합하면 빠르게 시작하고 강하게 추진하는 드림팀이 됩니다. 한 명이 에너지를 불어넣으면 다른 한 명이 즉시 실행합니다.`,scene:`신규 거래처 개척 시 영향력형이 첫 미팅을 강렬하게 이끌고, 실행형이 후속 업무를 완벽하게 마무리해 신뢰를 쌓습니다.`,tip:`영향력형이 시작의 불씨를 당기고, 실행형이 그 불을 꺼지지 않게 유지하세요.`},
+    'ex-re':{why:`실행력과 관계구축이 만나면 성과를 내면서도 팀 분위기를 따뜻하게 유지하는 이상적인 조합입니다. 결과와 사람 모두를 챙깁니다.`,scene:`팀 프로젝트에서 실행형이 목표를 향해 이끌 때, 관계형이 팀원 누구도 소외되지 않게 케어해 팀 전체의 동기를 유지합니다.`,tip:`실행형이 속도를 내기 전 관계형의 "팀원 준비됐나요?" 체크를 거치면 완벽합니다.`},
+    'ex-st':{why:`치밀한 전략과 강력한 실행이 결합하면 "제대로 된 것을 제대로 해내는" 완벽한 조합입니다. 방향 설계와 완수가 한 팀에 있습니다.`,scene:`연간 영업 전략 수립 시 전략형이 빅픽처를 설계하고, 실행형이 월별·주별로 쪼개 끝까지 완수해 목표를 달성합니다.`,tip:`전략 수립 단계에서 실행형의 "실제로 될까?" 현실 체크를 적극 활용하세요.`},
+    'in-in':{why:`두 영향력 강점이 만나면 에너지와 추진력이 배가됩니다. 서로가 서로에게 동기를 부여하며 팀 전체를 이끄는 강력한 리더십 듀오가 됩니다.`,scene:`팀 사기가 떨어진 시기에 두 영향력형이 각자의 방식으로 팀원들에게 에너지를 불어넣어 분위기를 역전시킵니다.`,tip:`주도권 충돌을 피하려면 "대내 영향력" vs "대외 영향력"으로 역할을 나누세요.`},
+    'in-re':{why:`영향력과 관계구축이 결합하면 사람을 끌어당기고 오래가는 신뢰 관계로 묶는 최고의 조합입니다. 설득하고 연결하는 힘이 강력합니다.`,scene:`고객사 담당자가 바뀌었을 때, 영향력형이 새 담당자에게 강한 첫인상을 심고 관계형이 지속적인 신뢰를 쌓아 장기 거래를 유지합니다.`,tip:`영향력형이 문을 열면, 관계형이 그 문을 잠그지 않게 관계를 유지해주세요.`},
+    'in-st':{why:`영향력과 전략적사고가 만나면 큰 그림을 그리고 설득력 있게 이끄는 조합이 됩니다. 비전을 만들고 사람들을 그 방향으로 움직이는 힘이 있습니다.`,scene:`팀 발표에서 전략형이 탄탄한 근거와 구조를 만들면, 영향력형이 청중의 마음을 움직이는 방식으로 전달해 최고의 임팩트를 냅니다.`,tip:`전략형이 "왜 이게 맞는가"를 준비하면, 영향력형이 "왜 지금 해야 하는가"를 전달하세요.`},
+    're-re':{why:`두 관계형성 강점이 만나면 팀의 심리적 안전지대가 완성됩니다. 서로를 깊이 이해하고 지지하며 강력한 신뢰 기반을 만들어냅니다.`,scene:`팀 갈등 상황에서 두 관계형이 각자 갈등 당사자들과 1:1로 대화하며 감정을 풀어주고, 팀 전체가 다시 하나가 되도록 이끕니다.`,tip:`결정을 내려야 할 때는 서로 감정을 너무 배려해 결론이 늦어지지 않도록 "오늘 결정" 약속이 필요합니다.`},
+    're-st':{why:`관계구축과 전략적사고가 결합하면 깊이 생각하고 신뢰로 실행하는 든든한 파트너십이 됩니다. 사람과 아이디어 모두를 연결합니다.`,scene:`장기 거래처 관리에서 관계형이 고객과 깊은 신뢰를 유지하고, 전략형이 고객 상황에 맞는 최적의 솔루션을 준비해 단골 거래처를 만듭니다.`,tip:`전략형의 제안은 관계형의 "이 고객은 이런 걸 좋아해요" 정보를 반드시 반영하세요.`},
+    'st-st':{why:`두 전략적사고 강점이 만나면 팀에서 가장 깊이 있는 분석과 통찰을 만들어냅니다. 서로의 생각을 발전시키며 탁월한 전략을 수립합니다.`,scene:`경쟁사 분석 프로젝트에서 두 전략형이 각자 다른 각도로 분석한 내용을 합쳐 누구도 생각하지 못한 인사이트를 도출해냅니다.`,tip:`분석이 길어지는 것을 막으려면 "결론 데드라인"을 함께 정하세요.`},
+  };
+  const FRI={
+    'ex-st':{why:`실행형은 "지금 당장 시작하자"고 하고 전략형은 "더 분석하자"고 해서 속도 차이로 마찰이 생깁니다.`,scene:`거래처 방문 전 실행형은 "일단 가서 보자"고 하고 전략형은 "고객 데이터 더 분석하고 가자"며 의견이 엇갈립니다.`,bridge:`"분석은 OO일까지, 그 이후는 바로 실행" 마감을 사전에 합의하세요.`},
+    'ex-re':{why:`실행형이 빠르게 밀고 나갈 때 관계형이 팀원 감정을 챙기느라 속도가 늦어져 마찰이 생깁니다.`,scene:`바쁜 마감 시즌에 실행형이 "그냥 빨리 끝내자"고 할 때 관계형이 "팀원이 힘들어하는데..."라며 페이스를 조절하려 합니다.`,bridge:`실행 전 5분 팀원 의견 수렴 시간을 고정으로 넣으면 두 강점이 모두 만족합니다.`},
+    'ex-in':{why:`실행형의 "어떻게 할지"와 영향력형의 "왜 해야 하는지"가 엇갈릴 때 방향 충돌이 생깁니다.`,scene:`업무 방식 변경 시 영향력형이 팀원을 설득하는 동안 실행형은 이미 새 방식으로 진행해 혼선이 생깁니다.`,bridge:`"설득 먼저, 실행 나중" 순서를 명확히 합의하세요.`},
+    'in-re':{why:`영향력형의 직접적이고 빠른 방식이 관계형의 섬세한 감정을 상하게 할 수 있습니다.`,scene:`팀 회의에서 영향력형이 강하게 의견을 밀어붙일 때 관계형이 내심 상처받으면서도 말하지 않아 불씨가 남습니다.`,bridge:`영향력형은 "이 방향 어떻게 생각해요?" 한 마디로 관계형의 의견을 먼저 물어봐주세요.`},
+    'in-st':{why:`영향력형이 직관으로 빠르게 결정할 때 전략형이 더 많은 데이터를 요구하며 충돌이 생깁니다.`,scene:`새 아이디어 제안 시 영향력형이 "일단 해봐요!"라고 하면 전략형이 "근거가 있어야죠"라며 제동을 겁니다.`,bridge:`영향력형은 핵심 근거 3가지만 준비하고, 전략형은 완벽하지 않아도 파일럿 실행을 허용하는 합의를 하세요.`},
+    're-st':{why:`관계형이 감정 중심으로 소통할 때 전략형이 논리와 데이터만 강조하면 소통이 어긋납니다.`,scene:`팀원이 힘들어할 때 관계형은 "많이 힘들었겠다"고 먼저 공감하는데, 전략형은 "원인이 뭐고 해결책이 뭔지" 바로 물어봐 서먹해집니다.`,bridge:`전략형은 "많이 힘들었겠다, 그래서 어떻게 하면 좋을까요?" 형식으로 공감 후 해결책을 제안하세요.`},
+    'ex-ex':{why:`두 실행형이 서로 다른 방식으로 실행하려 할 때 "내 방식이 맞다"는 충돌이 생깁니다.`,scene:`같은 업무를 두 명이 각자 자기 방식으로 진행하다 나중에 결과물이 달라 혼선이 생깁니다.`,bridge:`시작 전 "누가 어떤 역할"인지 5분 안에 명확히 나누세요.`},
+    'in-in':{why:`두 영향력형이 같은 공간에서 각자 주도하려 하면 보이지 않는 주도권 경쟁이 생깁니다.`,scene:`팀 발표 준비 시 두 영향력형이 각자 자기 방식으로 이끌려 해서 방향이 두 갈래로 나뉩니다.`,bridge:`"대내 영향력 담당" vs "대외 영향력 담당"으로 명확히 역할을 구분하세요.`},
+    're-re':{why:`두 관계형이 서로 감정을 너무 배려한 나머지 어려운 결정을 미루는 경향이 있습니다.`,scene:`인기 없는 결정을 해야 할 때 두 관계형이 서로 "네가 말해줘"라며 미루다 결정이 늦어집니다.`,bridge:`어려운 결정은 미리 "오늘 결론 낸다"고 약속하고 제3자 의견을 적극 활용하세요.`},
+    'st-st':{why:`두 전략형이 각자 분석 결과가 다를 때 "내 데이터가 맞다"는 논리 싸움이 생깁니다.`,scene:`두 전략형이 서로 다른 방향의 전략을 제안하며 회의가 결론 없이 길어집니다.`,bridge:`각자의 분석을 합쳐 "통합 전략"을 만드는 방식으로 접근하면 시너지가 생깁니다.`},
+  };
+  const fallbackSyn={why:`${a.kw||ta}과 ${b.kw||tb}이 만나면 서로의 부족한 부분을 채워주는 보완 관계가 됩니다.`,scene:`팀 프로젝트에서 각자의 강점을 발휘해 더 좋은 결과를 만들어냅니다.`,tip:`서로의 방식을 인정하고 역할을 명확히 나누는 것이 핵심입니다.`};
+  const fallbackFri={why:`${a.kw||ta}과 ${b.kw||tb}의 접근 방식이 달라 상황에 따라 방향이 엇갈릴 수 있습니다.`,scene:`업무 진행 방식이나 우선순위에 대한 시각 차이로 마찰이 생길 수 있습니다.`,bridge:`서로의 방식 차이를 먼저 인정하고, 협업 방식을 사전에 합의하는 것이 중요합니다.`};
+  if(type==='syn'){
+    const d=SYN[combo]||fallbackSyn;
+    return`<div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:6px;border:1px solid #22c55e22">
+      <div style="font-size:11px;font-weight:700;color:#22c55e;margin-bottom:4px">✨ 왜 잘 맞는가</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">${d.why}</div>
+      <div style="font-size:11px;font-weight:700;color:#22c55e;margin-bottom:4px">💼 실제 업무 시나리오</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">${d.scene}</div>
+      <div style="background:#22c55e15;border-radius:8px;padding:7px 10px;font-size:11px;color:#22c55e;line-height:1.5">💡 ${d.tip}</div>
+    </div>`;
+  }else{
+    const d=FRI[combo]||fallbackFri;
+    return`<div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:6px;border:1px solid #f9731622">
+      <div style="font-size:11px;font-weight:700;color:#f97316;margin-bottom:4px">⚡ 왜 조율이 필요한가</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">${d.why}</div>
+      <div style="font-size:11px;font-weight:700;color:#f97316;margin-bottom:4px">💬 실제로 이런 일이 생깁니다</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px">${d.scene}</div>
+      <div style="background:#f9731615;border-radius:8px;padding:7px 10px;font-size:11px;color:#f97316;line-height:1.5">🔧 ${d.bridge}</div>
+    </div>`;
+  }
+}
+function togglePairDetail(id,ta,tb,koA,koB,type){
+  const el=document.getElementById(id);if(!el)return;
+  if(el.style.display==='none'||!el.innerHTML.trim()){
+    el.innerHTML=getPairDetail(ta,tb,koA,koB,type);
+    el.style.display='block';
+    document.getElementById(id+'-arrow').textContent='▲';
+  }else{
+    el.style.display='none';
+    document.getElementById(id+'-arrow').textContent='▼';
+  }
+}
+
 function runGungHap(){
   const selA=document.getElementById('gh-sel-a');
   const selB=document.getElementById('gh-sel-b');
@@ -671,35 +735,51 @@ function runGungHap(){
   if(!a||!b){res.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">두 팀원을 모두 선택하세요</div>';return;}
   if(a===b){res.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:8px">서로 다른 팀원을 선택하세요</div>';return;}
   const r=calcGungHap(a,b);
-  const domColors={ex:'#8b5cf6',in:'#f97316',re:'#3b82f6',st:'#22c55e'};
-  const domNames={ex:'실행력',in:'영향력',re:'관계구축',st:'전략적사고'};
   const scoreBar=`<div style="background:var(--surface2);border-radius:10px;height:10px;overflow:hidden;margin:8px 0"><div style="height:100%;width:${r.score}%;background:${r.score>=74?'#22c55e':r.score>=42?'#f59e0b':'#ef4444'};border-radius:10px;transition:width .5s"></div></div>`;
   const synHTML=r.synPairs.length>0
-    ? r.synPairs.slice(0,4).map(([ta,tb])=>{
+    ? r.synPairs.slice(0,5).map(([ta,tb],i)=>{
         const koA=r.enToKo(ta), koB=r.enToKoB(tb);
         const sA=S.find(x=>x.ko===koA), sB=S.find(x=>x.ko===koB);
-        return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--surface2)">
-          <span style="background:${DOM[sA?.d||'ex'].bg};color:${DOM[sA?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koA}</span>
-          <span style="color:#22c55e;font-size:12px">↔</span>
-          <span style="background:${DOM[sB?.d||'ex'].bg};color:${DOM[sB?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koB}</span>
-          <span style="font-size:10px;color:#22c55e;margin-left:auto">✓ 시너지</span>
+        const pid=`syn-detail-${i}`;
+        return`<div>
+          <div onclick="togglePairDetail('${pid}','${ta}','${tb}','${koA}','${koB}','syn')" style="display:flex;align-items:center;gap:6px;padding:7px 4px;border-bottom:1px solid var(--surface2);cursor:pointer;border-radius:6px;transition:background .1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
+            <span style="background:${DOM[sA?.d||'ex'].bg};color:${DOM[sA?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koA}</span>
+            <span style="color:#22c55e;font-size:12px">↔</span>
+            <span style="background:${DOM[sB?.d||'ex'].bg};color:${DOM[sB?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koB}</span>
+            <span style="font-size:10px;color:#22c55e;margin-left:auto">✓ 시너지</span>
+            <span id="${pid}-arrow" style="font-size:9px;color:var(--text3);margin-left:4px">▼</span>
+          </div>
+          <div id="${pid}" style="display:none"></div>
         </div>`;}).join('')
     : '<div style="font-size:11px;color:var(--text3);padding:6px 0">직접적인 시너지 쌍이 없습니다</div>';
   const friHTML=r.friPairs.length>0
-    ? r.friPairs.slice(0,3).map(([ta,tb])=>{
+    ? r.friPairs.slice(0,4).map(([ta,tb],i)=>{
         const koA=r.enToKo(ta), koB=r.enToKoB(tb);
         const sA=S.find(x=>x.ko===koA), sB=S.find(x=>x.ko===koB);
-        return`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--surface2)">
-          <span style="background:${DOM[sA?.d||'ex'].bg};color:${DOM[sA?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koA}</span>
-          <span style="color:#f97316;font-size:12px">↔</span>
-          <span style="background:${DOM[sB?.d||'ex'].bg};color:${DOM[sB?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koB}</span>
-          <span style="font-size:10px;color:#f97316;margin-left:auto">△ 조율 필요</span>
+        const pid=`fri-detail-${i}`;
+        return`<div>
+          <div onclick="togglePairDetail('${pid}','${ta}','${tb}','${koA}','${koB}','fri')" style="display:flex;align-items:center;gap:6px;padding:7px 4px;border-bottom:1px solid var(--surface2);cursor:pointer;border-radius:6px;transition:background .1s" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
+            <span style="background:${DOM[sA?.d||'ex'].bg};color:${DOM[sA?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koA}</span>
+            <span style="color:#f97316;font-size:12px">↔</span>
+            <span style="background:${DOM[sB?.d||'ex'].bg};color:${DOM[sB?.d||'ex'].color};font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700">${koB}</span>
+            <span style="font-size:10px;color:#f97316;margin-left:auto">△ 조율 필요</span>
+            <span id="${pid}-arrow" style="font-size:9px;color:var(--text3);margin-left:4px">▼</span>
+          </div>
+          <div id="${pid}" style="display:none"></div>
         </div>`;}).join('')
     : '<div style="font-size:11px;color:#22c55e;padding:6px 0">✅ 마찰 요소 없음</div>';
   const domPills=r.combined.map(d=>`<span style="background:${DOM[d].bg};color:${DOM[d].color};font-size:10px;padding:3px 8px;border-radius:10px;font-weight:700">${DOM[d].name}</span>`).join('');
-  const tipHTML=r.tips.length>0
-    ? r.tips.map(t=>`<div style="background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px">💡 ${t}</div>`).join('')
-    : '';
+  // 협업 팁: TP에서 뽑은 실전 팁들
+  const allTips=[];
+  [...new Set([...r.synPairs.slice(0,2).map(([ta])=>ta),...r.friPairs.slice(0,1).map(([ta])=>ta)])].forEach(ta=>{if(TP[ta]?.tip)allTips.push({ta,tip:TP[ta].tip});});
+  const tipHTML=allTips.length>0?allTips.map(({ta,tip},i)=>{
+    const koT=S.find(x=>x.en===ta)?.ko||ta;
+    const sT=S.find(x=>x.en===ta);
+    const col=DOM[sT?.d||'ex'].color;
+    return`<div style="background:var(--surface2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px">
+      <span style="color:${col};font-weight:700;font-size:10px">[${koT}]</span> ${tip}
+    </div>`;
+  }).join(''):'';
   res.innerHTML=`
     <div style="background:linear-gradient(135deg,var(--surface2),var(--surface));border-radius:14px;padding:14px;margin-top:4px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -714,13 +794,13 @@ function runGungHap(){
         </div>
       </div>
       ${scoreBar}
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${domPills}</div>
-      <div style="margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:#22c55e;margin-bottom:6px">🔗 시너지 조합 (${r.synPairs.length}개)</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">${domPills}</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;margin-bottom:6px">🔗 시너지 조합 (${r.synPairs.length}개) <span style="font-weight:400;color:var(--text3)">· 클릭하면 자세히 보여요</span></div>
         ${synHTML}
       </div>
-      ${r.friPairs.length>0?`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#f97316;margin-bottom:6px">⚡ 조율 포인트 (${r.friPairs.length}개)</div>${friHTML}</div>`:''}
-      ${tipHTML?`<div style="margin-top:8px"><div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">📌 협업 팁</div>${tipHTML}</div>`:''}
+      ${r.friPairs.length>0?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#f97316;margin-bottom:6px">⚡ 조율 포인트 (${r.friPairs.length}개) <span style="font-weight:400;color:var(--text3)">· 클릭하면 자세히 보여요</span></div>${friHTML}</div>`:''}
+      ${tipHTML?`<div style="margin-top:4px"><div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px">📌 협업 팁</div>${tipHTML}</div>`:''}
     </div>`;
 }
 
