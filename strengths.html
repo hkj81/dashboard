@@ -447,6 +447,12 @@ async function syncGithub(name){
 async function syncAllToGithub(){
   const btn=document.getElementById('sync-all-btn');
   if(!ghToken){pendingSave=()=>syncAllToGithub();document.getElementById('tok-modal').classList.add('open');return;}
+  // PC에 API 키가 있으면 GitHub 데이터에 포함해서 저장 (다른 기기 지원)
+  if(geminiKey){
+    if(!allData._config)allData._config={};
+    allData._config.groqKey=geminiKey;
+    saveLocalData(allData);
+  }
   btn.textContent='⏳ 동기화 중...';btn.disabled=true;
   const ok=await syncGithub('전체동기화');
   btn.textContent=ok?'✅ 완료':'❌ 실패';
