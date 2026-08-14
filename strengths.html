@@ -395,6 +395,7 @@ async function loadData(){
       const ghData=migrateData(await r.json());
       // GitHub 데이터와 로컬 데이터 병합 (더 최신 updatedAt 우선)
       Object.entries(ghData).forEach(([k,v])=>{
+        if(k==='_config'){allData._config=v;return;}  // _config는 항상 GitHub 것 사용
         if(!allData[k]||v.updatedAt>=(allData[k].updatedAt||'')) allData[k]=v;
       });
       saveLocalData(allData);
