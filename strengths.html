@@ -1379,7 +1379,8 @@ function openAiModal(){
     valEl.textContent=geminiKey;
     showEl.style.display='block';
   }
-  openAiModal();
+  const modal=document.getElementById('ai-modal');
+  if(modal)modal.classList.add('open');
 }
 function copyAiKey(){
   if(!geminiKey)return;
