@@ -253,6 +253,13 @@ header{padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1
     <div class="modal-title">🤖 Groq API 키</div>
     <div class="modal-desc">AI 분석을 사용하려면 Groq API 키가 필요합니다. <strong style="color:#22c55e">완전 무료 · 한국 사용 가능</strong><br>
     <a href="https://console.groq.com/keys" target="_blank" style="color:#3b82f6">→ 키 발급 바로가기 (console.groq.com)</a></div>
+    <div id="ai-key-show" style="display:none;background:#22c55e15;border:1px solid #22c55e44;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;color:#22c55e;font-weight:700;margin-bottom:6px">✅ 저장된 키 (복사해서 다른 기기에 붙여넣기)</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div id="ai-key-val" style="font-size:11px;color:var(--text2);word-break:break-all;flex:1"></div>
+        <button onclick="copyAiKey()" style="background:#22c55e;border:none;border-radius:8px;color:#000;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">복사</button>
+      </div>
+    </div>
     <input class="modal-input" id="ai-key-input" type="text" placeholder="API 키 붙여넣기">
     <button class="modal-btn" onclick="saveAiKey()">저장하고 분석 시작</button>
     <button class="modal-cancel" onclick="document.getElementById('ai-modal').classList.remove('open')">취소</button>
@@ -1293,7 +1300,7 @@ function openProfile(name){
       <div class="ai-header">
         <span style="font-size:20px">🤖</span>
         <span class="ai-title">AI 강점 분석</span>
-        <button onclick="geminiKey='';localStorage.removeItem('geminiKey');document.getElementById('ai-modal').classList.add('open');" style="margin-left:auto;background:none;border:1px solid var(--surface2);color:var(--text3);border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">키 변경</button>
+        <button onclick="geminiKey='';localStorage.removeItem('geminiKey');openAiModal();" style="margin-left:auto;background:none;border:1px solid var(--surface2);color:var(--text3);border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">키 변경</button>
         <button class="ai-run-btn" onclick="runAI('${name}')">분석 시작</button>
       </div>
       <div id="ai-result"><div class="ai-placeholder">버튼을 누르면 AI가 강점 조합을 분석해드립니다</div></div>
@@ -1364,6 +1371,29 @@ function drawCharts(top5){
 let geminiKey=localStorage.getItem('geminiKey')||'';
 let pendingAI=null;
 
+function openAiModal(){
+  const showEl=document.getElementById('ai-key-show');
+  const valEl=document.getElementById('ai-key-val');
+  if(geminiKey&&showEl&&valEl){
+    valEl.textContent=geminiKey;
+    showEl.style.display='block';
+  }
+  openAiModal();
+}
+function copyAiKey(){
+  if(!geminiKey)return;
+  navigator.clipboard.writeText(geminiKey).then(()=>{
+    const btn=event.target;btn.textContent='✅ 복사됨';
+    setTimeout(()=>btn.textContent='복사',1500);
+  }).catch(()=>{
+    // 구형 브라우저 fallback
+    const el=document.createElement('textarea');
+    el.value=geminiKey;document.body.appendChild(el);
+    el.select();document.execCommand('copy');document.body.removeChild(el);
+    const btn=event.target;btn.textContent='✅ 복사됨';
+    setTimeout(()=>btn.textContent='복사',1500);
+  });
+}
 function saveAiKey(){
   const k=document.getElementById('ai-key-input').value.trim();
   if(k.length<10){alert('키가 너무 짧습니다');return;}
@@ -1379,7 +1409,7 @@ function saveAiKey(){
 }
 
 async function runAI(name){
-  if(!geminiKey){pendingAI=()=>runAI(name);document.getElementById('ai-modal').classList.add('open');return;}
+  if(!geminiKey){pendingAI=()=>runAI(name);openAiModal();return;}
   const d=allData[name];if(!d)return;
   const el=document.getElementById('ai-result');
   el.innerHTML='<div style="text-align:center;padding:20px"><span class="spin"></span>AI 분석 중...</div>';
@@ -1588,7 +1618,7 @@ function setChatInput(text){
 async function sendAIChat(){
   const inp=document.getElementById('chat-input');
   const q=inp.value.trim();if(!q)return;
-  if(!geminiKey){pendingAI=()=>sendAIChat();document.getElementById('ai-modal').classList.add('open');return;}
+  if(!geminiKey){pendingAI=()=>sendAIChat();openAiModal();return;}
 
   const msgs=document.getElementById('chat-messages');
   // 사용자 말풍선
