@@ -407,8 +407,8 @@ async function loadData(){
         if(!allData[k]||v.updatedAt>=(allData[k].updatedAt||'')) allData[k]=v;
       });
       saveLocalData(allData);
-      // GitHub 데이터에 저장된 Groq 키 자동 로드 (다른 기기 지원)
-      if(allData._config?.groqKey&&!geminiKey){
+      // GitHub 데이터에 저장된 Groq 키 자동 로드 (항상 GitHub 키 우선)
+      if(allData._config?.groqKey){
         geminiKey=allData._config.groqKey;
         localStorage.setItem('geminiKey',geminiKey);
       }
