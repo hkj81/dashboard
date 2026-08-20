@@ -1445,7 +1445,7 @@ ${top5Info}
     const r=await fetch(`https://api.groq.com/openai/v1/chat/completions`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+geminiKey},
-      body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'user',content:prompt}],temperature:0.8,max_tokens:2000})
+      body:JSON.stringify({model:'openai/gpt-oss-20b',messages:[{role:'user',content:prompt}],temperature:0.8,max_tokens:2000})
     });
     if(!r.ok){
       const errBody=await r.json().catch(()=>({}));
@@ -1641,7 +1641,7 @@ async function sendAIChat(){
     const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+geminiKey},
-      body:JSON.stringify({model:'llama-3.1-8b-instant',messages,temperature:0.7,max_tokens:1500})
+      body:JSON.stringify({model:'openai/gpt-oss-20b',messages,temperature:0.7,max_tokens:1500})
     });
     if(!r.ok){
       const e=await r.json().catch(()=>({}));
