@@ -966,7 +966,7 @@ function renderTeamAnalysis(){
   if(teamPhoto){
     html+=`<div style="background:var(--surface);border-radius:14px;margin-bottom:14px;overflow:hidden">
       <div style="position:relative">
-        <img src="${teamPhoto}" style="width:100%;max-height:220px;object-fit:cover;display:block">
+        <img src="${teamPhoto}" style="width:100%;display:block">
         <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px">
           <button onclick="uploadTeamPhoto('${curTeam}')" style="background:rgba(0,0,0,0.65);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">📷 변경</button>
           <button onclick="removeTeamPhoto('${curTeam}')" style="background:rgba(220,38,38,0.75);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">✕</button>
