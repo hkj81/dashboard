@@ -569,15 +569,22 @@ async function runGemini() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     system_instruction: {
-                        parts: [{ text: '당신은 알약 개수를 세는 전문가입니다. 사진 속 알약을 정확히 세고 반드시 숫자만 답해야 합니다. 설명이나 다른 텍스트는 절대 포함하지 마세요.' }]
+                        parts: [{ text: '당신은 의약품 재고 관리 전문가입니다. 사진 속 알약(정제·캡슐) 개수를 반드시 정확하게 세어야 합니다. 응답은 반드시 JSON 형식으로만 합니다: {"count": 숫자, "method": "세는방법 한줄설명"}' }]
                     },
                     contents: [{
                         parts: [
                             { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                            { text: '바닥에 놓인 알약(정제, 캡슐)을 하나씩 직접 세어주세요. 겹쳐있는 것도 최대한 포함해서 세세요. 숫자만 답하세요.' }
+                            { text: `사진 속 알약을 다음 방법으로 정확히 세어주세요:
+1. 사진을 격자(grid)로 나누어 왼쪽 위부터 오른쪽 아래 순서로 체계적으로 세세요
+2. 정제(납작한 원형), 캡슐(길쭉한 타원형) 모두 포함합니다
+3. 겹쳐있거나 일부만 보이는 알약도 포함합니다
+4. 알약이 아닌 물건(배경, 손, 용기 등)은 제외합니다
+5. 세고 나서 다시 한번 검토하여 최종 개수를 확인하세요
+
+반드시 JSON만 답하세요: {"count": 숫자, "method": "설명"}` }
                         ]
                     }],
-                    generationConfig: { temperature: 0, maxOutputTokens: 10 }
+                    generationConfig: { temperature: 0, maxOutputTokens: 50 }
                 })
             }
         );
@@ -593,7 +600,16 @@ async function runGemini() {
 
         const data  = await res.json();
         const text  = data.candidates?.[0]?.content?.parts?.[0]?.text || '0';
-        const count = parseInt(text.match(/\d+/)?.[0] || '0');
+        let count = 0;
+        try {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                count = parseInt(parsed.count) || 0;
+            } else {
+                count = parseInt(text.match(/\d+/)?.[0] || '0');
+            }
+        } catch { count = parseInt(text.match(/\d+/)?.[0] || '0'); }
 
         lastCount = count;
         captured  = true;
