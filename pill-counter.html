@@ -368,9 +368,9 @@
 <!-- ② AI 카운팅 버튼 -->
 <div style="background:#1e293b;padding:8px 12px;border-top:1px solid #334155;border-bottom:1px solid #334155;flex-shrink:0;">
     <div id="statusBar" style="text-align:center;font-size:13px;color:#64748b;margin-bottom:8px;">📷 아래 버튼을 눌러 카운팅 시작</div>
-    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:18px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <span style="font-size:26px;">📷</span>
-        <span>AI 카운팅 <span style="font-size:13px;font-weight:400;opacity:0.85;">(무료·정확)</span></span>
+    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:14px;width:100%;padding:32px 16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:36px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <span style="font-size:52px;">📷</span>
+        <span>AI 카운팅 <span style="font-size:22px;font-weight:400;opacity:0.85;">(무료·정확)</span></span>
     </button>
 
     <!-- 누적 합산 -->
@@ -391,11 +391,11 @@
 </div>
 
 <!-- ③ 계산기 -->
-<div style="background:#1e293b;padding:10px 12px 12px;flex:1;display:flex;flex-direction:column;gap:6px;">
+<div style="background:#1e293b;padding:6px 10px 8px;flex:0 0 38vh;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
     <!-- 디스플레이 -->
-    <div style="background:#0f172a;border-radius:12px;padding:10px 16px;">
-        <div id="calcExpr" style="font-size:13px;color:#64748b;text-align:right;min-height:16px;"></div>
-        <div id="calcDisplay" style="font-size:36px;font-weight:800;color:#f1f5f9;text-align:right;word-break:break-all;line-height:1.15;">0</div>
+    <div style="background:#0f172a;border-radius:10px;padding:6px 14px;">
+        <div id="calcExpr" style="font-size:11px;color:#64748b;text-align:right;min-height:14px;"></div>
+        <div id="calcDisplay" style="font-size:28px;font-weight:800;color:#f1f5f9;text-align:right;word-break:break-all;line-height:1.1;">0</div>
     </div>
     <!-- 버튼 그리드 -->
     <div id="calcGrid" style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr);gap:6px;flex:1;">
