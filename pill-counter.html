@@ -47,7 +47,7 @@
 
         /* ── Camera ── */
         .camera-wrap {
-            flex: 1;
+            flex: 0 0 36vh;
             position: relative;
             background: #000;
             overflow: hidden;
@@ -131,8 +131,9 @@
         /* ── Bottom panel ── */
         .bottom {
             background: #1e293b;
-            padding: 14px 16px 20px;
-            flex-shrink: 0;
+            padding: 10px 14px 14px;
+            flex: 1;
+            overflow-y: auto;
             border-top: 1px solid #334155;
         }
 
@@ -226,19 +227,49 @@
         .btn-ai {
             display: block;
             width: 100%;
-            padding: 13px;
-            margin-bottom: 12px;
+            padding: 10px 6px;
             background: linear-gradient(135deg, #1d4ed8, #7c3aed);
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             color: #fff;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             letter-spacing: -0.3px;
             -webkit-tap-highlight-color: transparent;
         }
         .btn-ai:active { opacity: 0.85; }
+
+        /* Inline calculator */
+        .calc-inline {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .calc-display-wrap {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-bottom: 2px;
+        }
+        .calc-expr-lbl { font-size: 10px; color: #64748b; min-height: 13px; text-align: right; }
+        .calc-num-lbl  { font-size: 22px; font-weight: 800; color: #f1f5f9; text-align: right; word-break: break-all; line-height: 1.1; }
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+        .calc-grid button {
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 13px 4px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .calc-grid button:active { opacity: 0.75; }
 
         /* History modal */
         .modal-bg {
@@ -292,12 +323,61 @@
     </div>
 </header>
 
-<!-- Camera area -->
+<!-- Camera / Banner area -->
 <div class="camera-wrap">
-    <video id="video" playsinline autoplay muted></video>
-    <canvas id="resultCanvas"></canvas>
 
-    <div class="guide-wrap" id="guideWrap">
+    <!-- ══ 배너 (기본 화면) ══ -->
+    <div id="bannerWrap" style="position:absolute;inset:0;background:#0f172a;overflow:hidden;display:flex;flex-direction:column;">
+
+        <!-- 슬라이드 영역 -->
+        <div id="bannerSlider" style="flex:1;position:relative;overflow:hidden;">
+
+            <!-- 슬라이드 1 -->
+            <div class="slide" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;transition:opacity 0.6s;">
+                <div style="font-size:48px;margin-bottom:10px;">💊</div>
+                <div style="font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:6px;">태전그룹 도매 시스템</div>
+                <div style="font-size:13px;color:#94a3b8;line-height:1.6;">AI 기술로 알약 개수를 정확하게<br>카메라 버튼을 눌러 시작하세요</div>
+                <div style="margin-top:14px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border-radius:20px;padding:6px 18px;font-size:12px;color:#fff;">📷 카메라 버튼으로 시작</div>
+            </div>
+
+            <!-- 슬라이드 2 -->
+            <div class="slide" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;opacity:0;transition:opacity 0.6s;">
+                <div style="font-size:44px;margin-bottom:10px;">🤖</div>
+                <div style="font-size:17px;font-weight:800;color:#22c55e;margin-bottom:8px;">AI 카운팅 기능</div>
+                <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+                    ✅ Google Gemini AI 기반<br>
+                    ✅ 하루 1,500회 무료<br>
+                    ✅ 신용카드 불필요
+                </div>
+            </div>
+
+            <!-- 슬라이드 3 -->
+            <div class="slide" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;opacity:0;transition:opacity 0.6s;">
+                <div style="font-size:44px;margin-bottom:10px;">📊</div>
+                <div style="font-size:17px;font-weight:800;color:#f59e0b;margin-bottom:8px;">사용 방법</div>
+                <div style="font-size:13px;color:#94a3b8;line-height:1.9;text-align:left;">
+                    1️⃣ 어두운 배경에 알약을 펼친다<br>
+                    2️⃣ 📷 버튼으로 촬영한다<br>
+                    3️⃣ 🤖 AI 버튼으로 정밀 카운팅<br>
+                    4️⃣ ➕ 합산으로 여러 통 누적
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 슬라이드 도트 -->
+        <div style="display:flex;justify-content:center;gap:6px;padding:8px 0;">
+            <div class="dot active-dot" style="width:6px;height:6px;border-radius:50%;background:#3b82f6;transition:background 0.3s;"></div>
+            <div class="dot" style="width:6px;height:6px;border-radius:50%;background:#334155;transition:background 0.3s;"></div>
+            <div class="dot" style="width:6px;height:6px;border-radius:50%;background:#334155;transition:background 0.3s;"></div>
+        </div>
+    </div>
+
+    <!-- ══ 카메라 (촬영 모드) ══ -->
+    <video id="video" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover;display:none;"></video>
+    <canvas id="resultCanvas" style="position:absolute;inset:0;width:100%;height:100%;display:none;"></canvas>
+
+    <div class="guide-wrap" id="guideWrap" style="display:none;">
         <div class="guide-label">알약을 이 영역 안에 고르게 펼쳐주세요</div>
         <div class="guide-rect"></div>
     </div>
@@ -312,7 +392,9 @@
         <div class="proc-text">분석 중...</div>
     </div>
 
-    <button onclick="flipCamera()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;color:#fff;z-index:10;" title="카메라 전환">🔄</button>
+    <!-- 카메라 모드 버튼들 (카메라 켜졌을 때만) -->
+    <button id="flipBtn" onclick="flipCamera()" style="display:none;position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;color:#fff;z-index:10;" title="카메라 전환">🔄</button>
+    <button id="closeCamera" onclick="stopCamera()" style="display:none;position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.5);border:none;border-radius:20px;padding:8px 14px;font-size:12px;cursor:pointer;color:#fff;z-index:10;">← 배너</button>
 </div>
 
 <!-- Bottom controls -->
@@ -324,43 +406,75 @@
         <button class="bg-btn" id="bgLight" onclick="setBg('light')">⬜ 밝은 배경</button>
     </div>
 
-    <div class="action-row">
-        <button class="btn-side" onclick="retake()" title="다시 찍기">↩</button>
-        <button class="btn-capture" id="captureBtn" onclick="handleCapture()">📷</button>
-        <button class="btn-side" onclick="saveCount()" title="기록 저장">💾</button>
-    </div>
+    <!-- 2-column: left=controls, right=calculator -->
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-top:2px;">
 
-    <div style="display:flex;gap:8px;">
-        <button class="btn-ai" onclick="aiCount()" style="flex:1;">🤖 AI 카운팅 (무료·정확)</button>
-        <button onclick="openCalc()" style="background:#475569;border:none;border-radius:14px;color:#fff;font-size:22px;padding:0 16px;cursor:pointer;" title="계산기">🧮</button>
-    </div>
-
-    <!-- 누적 합산 영역 -->
-    <div id="accumPanel" style="display:none;background:#1e293b;border-radius:14px;padding:14px 16px;margin-top:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="color:#94a3b8;font-size:13px;">한 통 누적 합계</span>
-            <button onclick="resetAccum()" style="background:#334155;border:none;border-radius:8px;color:#94a3b8;font-size:12px;padding:4px 10px;cursor:pointer;">🔄 초기화</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div id="accumSteps" style="color:#64748b;font-size:13px;flex:1;word-break:break-all;"></div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
-            <div>
-                <span style="color:#94a3b8;font-size:13px;">총 합계 </span>
-                <span id="accumTotal" style="color:#22c55e;font-size:26px;font-weight:800;">0</span>
-                <span style="color:#22c55e;font-size:14px;">개</span>
+        <!-- LEFT: action + AI + accum + size -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+            <div class="action-row" style="margin-bottom:0;">
+                <button class="btn-side" onclick="retake()" title="다시 찍기">↩</button>
+                <button class="btn-capture" id="captureBtn" onclick="handleCapture()">📷</button>
+                <button class="btn-side" onclick="saveCount()" title="기록 저장">💾</button>
             </div>
-            <div style="display:flex;gap:8px;">
-                <button id="addBtn" onclick="addToAccum()" style="background:#3b82f6;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;padding:10px 18px;cursor:pointer;">➕ 합산</button>
-                <button onclick="saveAccum()" style="background:#22c55e;border:none;border-radius:10px;color:#000;font-size:14px;font-weight:700;padding:10px 18px;cursor:pointer;">💾 저장</button>
+
+            <button class="btn-ai" onclick="aiCount()">🤖 AI 카운팅<br><span style="font-size:11px;font-weight:400;">(무료·정확)</span></button>
+
+            <!-- 누적 합산 -->
+            <div id="accumPanel" style="display:none;background:#0f172a;border-radius:10px;padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="color:#94a3b8;font-size:11px;">누적 합계</span>
+                    <button onclick="resetAccum()" style="background:#334155;border:none;border-radius:6px;color:#94a3b8;font-size:10px;padding:3px 8px;cursor:pointer;">🔄</button>
+                </div>
+                <div id="accumSteps" style="color:#64748b;font-size:11px;word-break:break-all;margin-bottom:6px;"></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="color:#22c55e;font-size:20px;font-weight:800;" id="accumTotal">0</span>
+                    <div style="display:flex;gap:4px;">
+                        <button id="addBtn" onclick="addToAccum()" style="background:#3b82f6;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;">➕</button>
+                        <button onclick="saveAccum()" style="background:#22c55e;border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;">💾</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="size-row">
+                <span class="size-lbl">크기</span>
+                <input type="range" id="sizeSlider" min="1" max="10" value="5" oninput="updateSizeLbl()">
+                <span class="size-val" id="sizeVal">중</span>
             </div>
         </div>
-    </div>
 
-    <div class="size-row">
-        <span class="size-lbl">알약 크기</span>
-        <input type="range" id="sizeSlider" min="1" max="10" value="5" oninput="updateSizeLbl()">
-        <span class="size-val" id="sizeVal">중</span>
+        <!-- RIGHT: inline calculator -->
+        <div class="calc-inline">
+            <div class="calc-display-wrap">
+                <div class="calc-expr-lbl" id="calcExpr"></div>
+                <div class="calc-num-lbl" id="calcDisplay">0</div>
+            </div>
+            <div class="calc-grid">
+                <button onclick="calcInput('C')" style="grid-column:span 2;background:#ef4444;color:#fff;">C</button>
+                <button onclick="calcInput('⌫')" style="background:#334155;color:#f1f5f9;">⌫</button>
+                <button onclick="calcInput('+')" style="background:#f59e0b;color:#000;">+</button>
+
+                <button onclick="calcInput('7')" style="background:#1e293b;color:#f1f5f9;">7</button>
+                <button onclick="calcInput('8')" style="background:#1e293b;color:#f1f5f9;">8</button>
+                <button onclick="calcInput('9')" style="background:#1e293b;color:#f1f5f9;">9</button>
+                <button onclick="calcInput('-')" style="background:#f59e0b;color:#000;">−</button>
+
+                <button onclick="calcInput('4')" style="background:#1e293b;color:#f1f5f9;">4</button>
+                <button onclick="calcInput('5')" style="background:#1e293b;color:#f1f5f9;">5</button>
+                <button onclick="calcInput('6')" style="background:#1e293b;color:#f1f5f9;">6</button>
+                <button onclick="calcInput('×')" style="background:#f59e0b;color:#000;">×</button>
+
+                <button onclick="calcInput('1')" style="background:#1e293b;color:#f1f5f9;">1</button>
+                <button onclick="calcInput('2')" style="background:#1e293b;color:#f1f5f9;">2</button>
+                <button onclick="calcInput('3')" style="background:#1e293b;color:#f1f5f9;">3</button>
+                <button onclick="calcInput('÷')" style="background:#f59e0b;color:#000;">÷</button>
+
+                <button onclick="calcInput('00')" style="background:#1e293b;color:#f1f5f9;">00</button>
+                <button onclick="calcInput('0')" style="background:#1e293b;color:#f1f5f9;">0</button>
+                <button onclick="calcUseCount()" style="background:#3b82f6;color:#fff;font-size:11px;">📷수</button>
+                <button onclick="calcInput('=')" style="background:#22c55e;color:#000;">=</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -515,6 +629,7 @@ updateHistoryChip();
 // Gemini AI 카운팅
 // ─────────────────────────────────────────────
 function aiCount() {
+    if (!cameraActive) { startCamera().then(() => { if(geminiKey) runGemini(); else document.getElementById('apiModal').style.display='flex'; }); return; }
     if (!geminiKey) {
         document.getElementById('apiModal').style.display = 'flex';
         return;
@@ -633,10 +748,42 @@ async function runGemini() {
 // Camera
 // ─────────────────────────────────────────────
 let currentFacing = 'environment';
+let cameraActive  = false;
+
+function showCameraMode() {
+    document.getElementById('bannerWrap').style.display = 'none';
+    video.style.display = 'block';
+    document.getElementById('guideWrap').style.display  = 'flex';
+    document.getElementById('flipBtn').style.display    = 'block';
+    document.getElementById('closeCamera').style.display= 'block';
+    cameraActive = true;
+}
+
+function showBannerMode() {
+    document.getElementById('bannerWrap').style.display = 'flex';
+    video.style.display = 'none';
+    resultCanvas.style.display = 'none';
+    document.getElementById('guideWrap').style.display  = 'none';
+    document.getElementById('flipBtn').style.display    = 'none';
+    document.getElementById('closeCamera').style.display= 'none';
+    document.getElementById('resultBadge').style.display= 'none';
+    captured = false; lastCount = null;
+    cameraActive = false;
+}
+
+function stopCamera() {
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+    }
+    showBannerMode();
+    setStatus('카메라 버튼을 눌러 시작하세요');
+}
 
 async function startCamera(facing) {
     facing = facing || currentFacing;
     currentFacing = facing;
+    showCameraMode();
     try {
         if (video.srcObject) {
             video.srcObject.getTracks().forEach(t => t.stop());
@@ -648,6 +795,7 @@ async function startCamera(facing) {
         await video.play();
         setStatus('촬영 버튼을 눌러 알약 개수를 분석하세요');
     } catch(e) {
+        showBannerMode();
         setStatus('❌ 카메라 권한을 허용해주세요 (브라우저 주소창 → 자물쇠 아이콘)');
     }
 }
@@ -656,6 +804,19 @@ function flipCamera() {
     currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
     startCamera(currentFacing);
 }
+
+// 배너 자동 슬라이드
+let slideIdx = 0;
+const slides = document.querySelectorAll('.slide');
+const dots   = document.querySelectorAll('.dot');
+function nextSlide() {
+    slides[slideIdx].style.opacity = '0';
+    dots[slideIdx].style.background = '#334155';
+    slideIdx = (slideIdx + 1) % slides.length;
+    slides[slideIdx].style.opacity = '1';
+    dots[slideIdx].style.background = '#3b82f6';
+}
+setInterval(nextSlide, 3000);
 
 // ─────────────────────────────────────────────
 // UI helpers
@@ -726,6 +887,7 @@ function closeHistory(e) {
 // Capture
 // ─────────────────────────────────────────────
 function handleCapture() {
+    if (!cameraActive) { startCamera(); return; }
     if (captured) { retake(); return; }
     if (!video.videoWidth) { setStatus('카메라가 아직 준비되지 않았습니다'); return; }
 
@@ -1053,9 +1215,10 @@ function drawResults(blobs, pw, ph) {
 }
 
 // ─────────────────────────────────────────────
-// Start
+// Start — 배너 먼저, 카메라는 버튼 누를 때
 // ─────────────────────────────────────────────
-startCamera();
+showBannerMode();
+setStatus('📷 카메라 버튼을 눌러 알약 카운팅을 시작하세요');
 </script>
 </body>
 </html>
