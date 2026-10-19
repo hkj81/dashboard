@@ -369,6 +369,9 @@
         <div class="spinner"></div>
         <div class="proc-text">분석 중...</div>
     </div>
+    <!-- 배너 화살표 -->
+    <button id="bannerPrev" onclick="prevSlide()" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);border:none;border-radius:50%;width:44px;height:44px;font-size:22px;color:#fff;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;">‹</button>
+    <button id="bannerNext" onclick="nextSlideBtn()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);border:none;border-radius:50%;width:44px;height:44px;font-size:22px;color:#fff;cursor:pointer;z-index:5;display:flex;align-items:center;justify-content:center;">›</button>
     <button id="flipBtn" onclick="flipCamera()" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;color:#fff;z-index:10;">🔄</button>
     <button id="closeCamera" onclick="stopCamera()" style="display:none;position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.55);border:none;border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;color:#fff;z-index:10;">← 배너</button>
 </div>
@@ -376,9 +379,9 @@
 <!-- ② AI 카운팅 버튼 -->
 <div style="background:#1e293b;padding:8px 12px;border-top:1px solid #334155;border-bottom:1px solid #334155;flex-shrink:0;">
     <div id="statusBar" style="text-align:center;font-size:13px;color:#64748b;margin-bottom:8px;">📷 아래 버튼을 눌러 카운팅 시작</div>
-    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:36px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <span style="font-size:36px;">📷</span>
-        <span>AI 카운팅 <span style="font-size:18px;font-weight:400;opacity:0.85;">(무료·정확)</span></span>
+    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:44px 16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:38px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <span style="font-size:52px;">📷</span>
+        <span>AI 카운팅 <span style="font-size:22px;font-weight:400;opacity:0.85;">(무료·정확)</span></span>
     </button>
 
     <!-- 누적 합산 -->
@@ -399,7 +402,7 @@
 </div>
 
 <!-- ③ 계산기 -->
-<div style="background:#1e293b;padding:6px 10px 8px;flex:0 0 38vh;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
+<div style="background:#1e293b;padding:6px 10px 8px;flex:0 0 46vh;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
     <!-- 디스플레이 -->
     <div style="background:#0f172a;border-radius:10px;padding:6px 14px;">
         <div id="calcExpr" style="font-size:11px;color:#64748b;text-align:right;min-height:14px;"></div>
@@ -698,6 +701,7 @@ function showCameraMode() {
     document.getElementById('guideWrap').style.display  = 'flex';
     document.getElementById('flipBtn').style.display    = 'block';
     document.getElementById('closeCamera').style.display= 'block';
+    showCameraArrows(false);
     cameraActive = true;
 }
 
@@ -709,6 +713,7 @@ function showBannerMode() {
     document.getElementById('flipBtn').style.display    = 'none';
     document.getElementById('closeCamera').style.display= 'none';
     document.getElementById('resultBadge').style.display= 'none';
+    showCameraArrows(true);
     captured = false; lastCount = null;
     cameraActive = false;
 }
@@ -751,14 +756,42 @@ function flipCamera() {
 let slideIdx = 0;
 const slides = document.querySelectorAll('.slide');
 const dots   = document.querySelectorAll('.dot');
-function nextSlide() {
+function goSlide(idx) {
     slides[slideIdx].style.opacity = '0';
     dots[slideIdx].style.background = '#334155';
-    slideIdx = (slideIdx + 1) % slides.length;
+    slideIdx = (idx + slides.length) % slides.length;
     slides[slideIdx].style.opacity = '1';
     dots[slideIdx].style.background = '#3b82f6';
 }
+function nextSlide()    { goSlide(slideIdx + 1); }
+function nextSlideBtn() { goSlide(slideIdx + 1); }
+function prevSlide()    { goSlide(slideIdx - 1); }
 setInterval(nextSlide, 3000);
+
+// 배너 화살표 카메라모드시 숨기기
+function showCameraArrows(show) {
+    const prev = document.getElementById('bannerPrev');
+    const next = document.getElementById('bannerNext');
+    if (prev) prev.style.display = show ? 'flex' : 'none';
+    if (next) next.style.display = show ? 'flex' : 'none';
+}
+
+// 배너 풀스크린 오버레이
+function openFullBanner() {
+    const slide = slides[slideIdx];
+    const img = slide.querySelector('img');
+    if (!img) return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    const bigImg = document.createElement('img');
+    bigImg.src = img.src;
+    bigImg.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+    overlay.appendChild(bigImg);
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+}
+// 배너 슬라이더 터치시 풀스크린
+document.getElementById('bannerSlider').addEventListener('click', openFullBanner);
 
 // ─────────────────────────────────────────────
 // UI helpers
