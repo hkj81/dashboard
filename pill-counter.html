@@ -673,6 +673,7 @@ async function runGemini() {
                 count = parseInt(text.match(/\d+/)?.[0] || '0');
             }
         } catch { count = parseInt(text.match(/\d+/)?.[0] || '0'); }
+        alert('원본: ' + rawText.substring(0,200) + '\n\n정제후: ' + text.substring(0,200) + '\n\n카운트: ' + count);
 
         lastCount = count;
         captured  = true;
