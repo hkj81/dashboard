@@ -659,7 +659,9 @@ async function runGemini() {
         }
 
         const data  = await res.json();
-        const text  = data.candidates?.[0]?.content?.parts?.[0]?.text || '0';
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '0';
+        // 마크다운 코드블록 제거
+        const text = rawText.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim();
         console.log('Gemini 응답:', text);
         let count = 0;
         try {
@@ -671,7 +673,6 @@ async function runGemini() {
                 count = parseInt(text.match(/\d+/)?.[0] || '0');
             }
         } catch { count = parseInt(text.match(/\d+/)?.[0] || '0'); }
-        if (count === 0) alert('AI 응답: ' + text);
 
         lastCount = count;
         captured  = true;
