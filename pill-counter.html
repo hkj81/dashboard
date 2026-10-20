@@ -628,23 +628,13 @@ async function runGemini() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    system_instruction: {
-                        parts: [{ text: '당신은 의약품 재고 관리 전문가입니다. 사진 속 알약(정제·캡슐) 개수를 반드시 정확하게 세어야 합니다. 응답은 반드시 JSON 형식으로만 합니다: {"count": 숫자, "method": "세는방법 한줄설명"}' }]
-                    },
                     contents: [{
                         parts: [
                             { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                            { text: `사진 속 알약을 다음 방법으로 정확히 세어주세요:
-1. 사진을 격자(grid)로 나누어 왼쪽 위부터 오른쪽 아래 순서로 체계적으로 세세요
-2. 정제(납작한 원형), 캡슐(길쭉한 타원형) 모두 포함합니다
-3. 겹쳐있거나 일부만 보이는 알약도 포함합니다
-4. 알약이 아닌 물건(배경, 손, 용기 등)은 제외합니다
-5. 세고 나서 다시 한번 검토하여 최종 개수를 확인하세요
-
-반드시 JSON만 답하세요: {"count": 숫자, "method": "설명"}` }
+                            { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
                         ]
                     }],
-                    generationConfig: { temperature: 0, maxOutputTokens: 50 }
+                    generationConfig: { temperature: 0, maxOutputTokens: 10 }
                 })
             }
         );
