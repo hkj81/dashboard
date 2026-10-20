@@ -680,7 +680,8 @@ async function runGemini() {
         document.getElementById('addBtn').style.background = '#3b82f6';
 
     } catch(e) {
-        setStatus('오류: ' + e.message);
+        setStatus('❌ 오류: ' + e.message);
+        alert('AI 카운팅 오류:\n' + e.message);
         resultCanvas.style.display = 'none';
         document.getElementById('guideWrap').style.display = 'flex';
     }
