@@ -269,6 +269,34 @@
         }
         .calc-grid button:active { opacity: 0.75; }
 
+        /* ── 토스트 팝업 ── */
+        #toast {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1e293b;
+            border: 1px solid #ef4444;
+            border-radius: 14px;
+            padding: 14px 20px;
+            font-size: 13px;
+            color: #f1f5f9;
+            line-height: 1.5;
+            max-width: 90vw;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        #toast.success { border-color: #22c55e; }
+
         /* ── PC 반응형 레이아웃 ── */
         @media (min-width: 768px) {
             body {
@@ -345,6 +373,9 @@
     </style>
 </head>
 <body>
+
+<!-- 토스트 팝업 -->
+<div id="toast"></div>
 
 <!-- Header -->
 <header>
@@ -658,46 +689,61 @@ async function runGemini() {
         tc.getContext('2d').drawImage(processCanvas, 0, 0, tc.width, tc.height);
         const b64 = tc.toDataURL('image/jpeg', 0.92).split(',')[1];
 
-        // 여러 모델 순서대로 시도
-        const tryModels = [
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey,
-            'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=' + geminiKey,
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + geminiKey,
-        ];
-        let res = null, lastErr = '';
-        for (const url of tryModels) {
-            setStatus('🤖 AI 분석 중...');
+        // 사용 가능한 모델 자동 선택
+        setStatus('🔍 모델 확인 중...');
+        let modelName = localStorage.getItem('geminiModel') || '';
+        if (!modelName) {
             try {
-                const r = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                                { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
-                            ]
-                        }],
-                        generationConfig: { temperature: 0, maxOutputTokens: 10 }
-                    })
-                });
-                if (r.ok) { res = r; break; }
-                const eJson = await r.json();
-                lastErr = eJson.error?.message || 'HTTP ' + r.status;
-                if (r.status === 401 || r.status === 403) {
-                    geminiKey = ''; localStorage.removeItem('geminiKey');
-                    throw new Error('API 키 오류: 다시 설정해주세요.');
+                const mRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`);
+                if (mRes.ok) {
+                    const mData = await mRes.json();
+                    const models = (mData.models || [])
+                        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+                        .map(m => m.name.replace('models/', ''));
+                    // 선호 모델 순서
+                    const prefer = ['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite',
+                                    'gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
+                    for (const p of prefer) {
+                        const found = models.find(m => m.startsWith(p));
+                        if (found) { modelName = found; break; }
+                    }
+                    if (!modelName && models.length > 0) modelName = models[0];
+                    if (modelName) localStorage.setItem('geminiModel', modelName);
                 }
-            } catch(fetchErr) {
-                if (fetchErr.message.includes('API 키')) throw fetchErr;
-                lastErr = fetchErr.message;
-            }
+            } catch(e) { /* 무시하고 기본값 시도 */ }
+            if (!modelName) modelName = 'gemini-1.5-flash-latest';
         }
-        if (!res) throw new Error('모델 오류: ' + lastErr);
+
+        setStatus('🤖 AI 분석 중 (' + modelName + ')...');
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { inline_data: { mime_type: 'image/jpeg', data: b64 } },
+                            { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
+                        ]
+                    }],
+                    generationConfig: { temperature: 0, maxOutputTokens: 10 }
+                })
+            }
+        );
+
+        if (!res.ok) {
+            localStorage.removeItem('geminiModel'); // 실패시 캐시 삭제
+            const e = await res.json();
+            if (res.status === 401 || res.status === 403) {
+                geminiKey = ''; localStorage.removeItem('geminiKey');
+                throw new Error('API 키 오류: 다시 설정해주세요.');
+            }
+            throw new Error(e.error?.message || 'API 오류 ' + res.status);
+        }
 
         const data  = await res.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        setStatus('AI 응답: ' + rawText.trim().substring(0, 40));
         // 숫자만 추출
         const count = parseInt(rawText.match(/\d+/)?.[0] || '0');
         console.log('Gemini 응답:', rawText, '→', count);
@@ -711,7 +757,8 @@ async function runGemini() {
         document.getElementById('addBtn').style.background = '#3b82f6';
 
     } catch(e) {
-        setStatus('❌ 오류: ' + e.message);
+        showToast(e.message);
+        setStatus('📷 다시 촬영해주세요');
         resultCanvas.style.display = 'none';
         document.getElementById('guideWrap').style.display = 'flex';
     }
@@ -774,7 +821,8 @@ async function startCamera(facing) {
         setStatus('촬영 버튼을 눌러 알약 개수를 분석하세요');
     } catch(e) {
         showBannerMode();
-        setStatus('❌ 카메라 권한을 허용해주세요 (브라우저 주소창 → 자물쇠 아이콘)');
+        showToast('카메라 권한을 허용해주세요 (주소창 자물쇠 아이콘)');
+        setStatus('카메라 권한 필요');
     }
 }
 
@@ -827,6 +875,15 @@ document.getElementById('bannerSlider').addEventListener('click', openFullBanner
 // ─────────────────────────────────────────────
 // UI helpers
 // ─────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'error', duration = 4000) {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'error' ? '❌ ' : '✅ ') + msg;
+    t.className = 'show' + (type === 'success' ? ' success' : '');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { t.className = ''; }, duration);
+}
+
 function setStatus(msg) {
     document.getElementById('statusBar').textContent = msg;
 }
