@@ -428,9 +428,9 @@
         <div class="guide-label">알약을 이 영역 안에 고르게 펼쳐주세요</div>
         <div class="guide-rect"></div>
     </div>
-    <div class="result-badge" id="resultBadge">
-        <div class="result-num" id="resultNum">0</div>
-        <div class="result-sub">개 감지됨</div>
+    <div id="resultBadge" style="display:none;position:absolute;bottom:10px;right:10px;background:rgba(15,23,42,0.88);border:2px solid #22c55e;border-radius:12px;padding:6px 14px;text-align:center;backdrop-filter:blur(8px);">
+        <span id="resultNum" style="font-size:28px;font-weight:800;color:#22c55e;line-height:1;">0</span>
+        <span style="font-size:11px;color:#94a3b8;margin-left:3px;">개</span>
     </div>
     <div class="proc-overlay" id="procOverlay">
         <div class="spinner"></div>
@@ -1034,14 +1034,15 @@ function doCapture() {
 }
 
 // ─────────────────────────────────────────────
-// Image processing pipeline v3 — 붙은 알약도 정확하게
+// Image processing pipeline — 단순하고 신뢰성 있는 버전
+// 1블롭 = 1알약, 알약 크기 자동 추정
 // ─────────────────────────────────────────────
 function processImage(pw, ph) {
     const ctx     = processCanvas.getContext('2d');
     const imgData = ctx.getImageData(0, 0, pw, ph);
     const d       = imgData.data;
 
-    // 1) 밝기(grayscale) 계산
+    // 1) Grayscale
     const gray = new Uint8Array(pw * ph);
     for (let i = 0; i < pw*ph; i++)
         gray[i] = (d[i*4]*77 + d[i*4+1]*150 + d[i*4+2]*29) >> 8;
@@ -1049,36 +1050,22 @@ function processImage(pw, ph) {
     // 2) Gaussian blur
     const blurred = gaussBlur5(gray, pw, ph);
 
-    // 3) Otsu 자동 임계값으로 이진화 (밝은 알약 vs 어두운 배경)
+    // 3) Otsu 자동 임계값 이진화
     const thresh = otsu(blurred);
     const bin = new Uint8Array(pw * ph);
     for (let i = 0; i < pw*ph; i++) bin[i] = blurred[i] > thresh ? 1 : 0;
 
-    // 4) 침식 1회 (잡음 제거, 최소한으로)
+    // 4) 침식 1회 — 붙은 알약 분리 시도
     let proc = erode(bin, pw, ph);
 
-    // 5) 전체 이미지에서 블롭 탐색 (가이드 영역 제한 없음)
-    const rawBlobs = findBlobs(proc, pw, ph, 50, pw * ph * 0.5);
-    if (rawBlobs.length === 0) { drawResults([], pw, ph); return 0; }
+    // 5) 블롭 탐색: 이미지 크기 대비 비율로 범위 지정
+    //    알약 1개 = 이미지 면적의 0.15% ~ 12%
+    const minA = pw * ph * 0.0015;
+    const maxA = pw * ph * 0.12;
+    const blobs = findBlobs(proc, pw, ph, minA, maxA);
 
-    // 6) 가장 작은 블롭 = 알약 1개 기준 크기 (단독 알약이 적어도 1개 있다고 가정)
-    const sortedAreas = rawBlobs.map(b => b.area).sort((a,b) => a-b);
-    // 하위 30% 중 중앙값을 단일 알약 크기로 사용
-    const refIdx = Math.max(0, Math.floor(sortedAreas.length * 0.15));
-    const singleArea = sortedAreas[refIdx];
-
-    // 7) 각 블롭에서 알약 개수 추정 (큰 블롭은 여러 알약이 붙은 것)
-    const drawBlobs = [];
-    let totalCount = 0;
-    for (const b of rawBlobs) {
-        if (b.area < singleArea * 0.15) continue; // 너무 작은 잡음 제거
-        const n = Math.max(1, Math.round(b.area / singleArea));
-        totalCount += n;
-        drawBlobs.push({ ...b, count: n });
-    }
-
-    drawResults(drawBlobs, pw, ph);
-    return totalCount;
+    drawResults(blobs, pw, ph);
+    return blobs.length;
 }
 
 // ─────────────────────────────────────────────
@@ -1250,47 +1237,41 @@ function drawResults(blobs, pw, ph) {
     // Draw captured photo
     ctx.drawImage(processCanvas, 0, 0, rw, rh);
 
-    // 약매니져 스타일: 흰 테두리 원 + 핑크 점 + 번호
-    let numSoFar = 0;
-    blobs.forEach((b) => {
+    // 각 알약에 핑크 점 + 작은 번호 (약매니져 스타일)
+    blobs.forEach((b, i) => {
         const x = b.cx * sx;
         const y = b.cy * sy;
-        const r = Math.max(b.r * (sx + sy) / 2, 12);
-        const n = b.count || 1;
+        const r = Math.max(b.r * (sx + sy) / 2, 10);
 
-        // 흰 테두리 원
+        // 반투명 원형 외곽
         ctx.beginPath();
-        ctx.arc(x, y, r + 3, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-        ctx.lineWidth = 2.5;
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 핑크 중앙 점
-        const dotR = Math.max(7, r * 0.28);
+        // 중앙 핑크 점
+        const dotR = Math.max(5, r * 0.25);
         ctx.beginPath();
         ctx.arc(x, y, dotR, 0, Math.PI * 2);
         ctx.fillStyle = '#f472b6';
         ctx.fill();
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // 번호 배지 (중앙 위)
-        numSoFar += n;
-        const label = n > 1 ? `${numSoFar - n + 1}~${numSoFar}` : `${numSoFar}`;
-        const fs = Math.max(11, Math.min(r * 0.6, 22));
-        const bw = ctx.measureText(label).width + 10;
-        const bh = fs + 6;
-        const bx = x - bw/2, by = y - r - bh - 4;
-        ctx.fillStyle = n > 1 ? '#f59e0b' : '#3b82f6';
-        ctx.beginPath();
-        ctx.roundRect(bx, by, bw, bh, 6);
-        ctx.fill();
+        // 번호 — 작게, 왼쪽 위 모서리
+        const num = i + 1;
+        const fs = Math.max(10, Math.min(r * 0.55, 18));
         ctx.font = `bold ${fs}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        // 검정 외곽
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillText(num, x + 1, y - r + fs*0.5 + 1);
+        // 흰 텍스트
         ctx.fillStyle = '#fff';
-        ctx.fillText(label, x, by + bh/2);
+        ctx.fillText(num, x, y - r + fs*0.5);
     });
 }
 
