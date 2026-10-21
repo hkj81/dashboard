@@ -446,7 +446,7 @@
 <!-- ② AI 카운팅 버튼 -->
 <div id="aiPanel" style="background:#1e293b;padding:8px 12px;border-top:1px solid #334155;border-bottom:1px solid #334155;flex-shrink:0;">
     <div id="statusBar" style="text-align:center;font-size:13px;color:#64748b;margin-bottom:8px;">📷 아래 버튼을 눌러 카운팅 시작</div>
-    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:22px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+    <button id="aiBtn" onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:22px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
         <span style="font-size:30px;">📷</span>
         <span>AI 카운팅</span>
     </button>
@@ -641,12 +641,28 @@ updateHistoryChip();
 // Gemini AI 카운팅
 // ─────────────────────────────────────────────
 function aiCount() {
-    if (!cameraActive) { startCamera().then(() => { if(geminiKey) runGemini(); else document.getElementById('apiModal').style.display='flex'; }); return; }
+    if (!cameraActive) {
+        // 카메라만 켜기
+        startCamera();
+        return;
+    }
+    if (captured) {
+        // 이미 촬영한 상태 → 다시 찍기
+        captured = false; lastCount = null;
+        resultCanvas.style.display = 'none';
+        document.getElementById('resultBadge').style.display = 'none';
+        document.getElementById('guideWrap').style.display = 'flex';
+        document.getElementById('accumPanel').style.display = 'none';
+        setAiBtn('camera');
+        setStatus('알약을 화면 안에 놓고 촬영하기 버튼을 누르세요');
+        return;
+    }
     if (!geminiKey) {
         document.getElementById('apiModal').style.display = 'flex';
         return;
     }
-    if (!video.videoWidth) { setStatus('카메라가 준비되지 않았습니다. 카메라 권한을 허용해주세요.'); return; }
+    if (!video.videoWidth) { setStatus('카메라가 준비 중입니다. 잠시 후 다시 누르세요.'); return; }
+    // 촬영 + AI 분석
     runGemini();
 }
 
@@ -689,43 +705,48 @@ async function runGemini() {
         tc.getContext('2d').drawImage(processCanvas, 0, 0, tc.width, tc.height);
         const b64 = tc.toDataURL('image/jpeg', 0.92).split(',')[1];
 
-        // 모델 순서대로 시도 (API 권장 모델 우선)
+        // 작동하는 모델 캐시 사용 (속도 향상)
         const tryModels = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-        const reqBody = JSON.stringify({
-            contents: [{
-                parts: [
-                    { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                    { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
-                ]
-            }],
-            generationConfig: { temperature: 0, maxOutputTokens: 10 }
+        const cached = localStorage.getItem('workingModel');
+        if (cached && !tryModels.includes(cached)) tryModels.unshift(cached);
+        else if (cached) { tryModels.splice(tryModels.indexOf(cached), 1); tryModels.unshift(cached); }
+
+        const makeBody = (text) => JSON.stringify({
+            contents: [{ parts: [
+                { inline_data: { mime_type: 'image/jpeg', data: b64 } },
+                { text }
+            ]}],
+            generationConfig: { temperature: 0, maxOutputTokens: 20 }
         });
 
-        let res = null;
+        let res = null, usedModel = '';
         for (const model of tryModels) {
-            setStatus('🤖 AI 분석 중...');
+            setStatus('🤖 AI 분석 중 (' + model + ')...');
             const r = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-                { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody }
+                { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: makeBody('이 사진 속 알약(정제·캡슐) 개수를 세어서 숫자만 답하세요. 반드시 숫자 하나만. 예: 8') }
             );
-            if (r.ok) { res = r; break; }
+            if (r.ok) { res = r; usedModel = model; localStorage.setItem('workingModel', model); break; }
             const eJson = await r.json().catch(() => ({}));
             const msg = eJson.error?.message || '';
             if (r.status === 401 || r.status === 403) {
                 geminiKey = ''; localStorage.removeItem('geminiKey');
                 throw new Error('API 키 오류: 다시 설정해주세요.');
             }
-            // "no longer available" 또는 "not found"면 다음 모델 시도
-            if (msg.includes('no longer available') || msg.includes('not found')) continue;
+            if (msg.includes('no longer available') || msg.includes('not found')) {
+                if (model === cached) localStorage.removeItem('workingModel');
+                continue;
+            }
             throw new Error(msg || 'API 오류 ' + r.status);
         }
         if (!res) throw new Error('사용 가능한 모델이 없습니다. API 키를 확인해주세요.');
 
         const data  = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        // 숫자만 추출
+        const rawText = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        console.log('[' + usedModel + '] 응답:', rawText);
+        // 숫자 추출
         const count = parseInt(rawText.match(/\d+/)?.[0] || '0');
-        console.log('Gemini 응답:', rawText, '→', count);
 
         lastCount = count;
         captured  = true;
@@ -734,6 +755,9 @@ async function runGemini() {
         setStatus(`🤖 AI 카운팅: ${count}개 감지됨 · ➕합산 또는 💾저장`);
         document.getElementById('accumPanel').style.display = 'block';
         document.getElementById('addBtn').style.background = '#3b82f6';
+        setAiBtn('retake');
+        if (count === 0) showToast('알약을 감지하지 못했어요. 더 밝은 곳에서 다시 촬영해보세요.', 'error', 4000);
+        else showToast(count + '개 감지됨!', 'success', 3000);
 
     } catch(e) {
         showToast(e.message);
@@ -752,6 +776,21 @@ async function runGemini() {
 let currentFacing = 'environment';
 let cameraActive  = false;
 
+function setAiBtn(mode) {
+    const btn = document.getElementById('aiBtn');
+    if (!btn) return;
+    if (mode === 'camera') {
+        btn.innerHTML = '<span style="font-size:30px;">🎯</span><span>촬영하기</span>';
+        btn.style.background = 'linear-gradient(135deg,#059669,#0d9488)';
+    } else if (mode === 'retake') {
+        btn.innerHTML = '<span style="font-size:30px;">🔄</span><span>다시 찍기</span>';
+        btn.style.background = 'linear-gradient(135deg,#374151,#4b5563)';
+    } else {
+        btn.innerHTML = '<span style="font-size:30px;">📷</span><span>AI 카운팅</span>';
+        btn.style.background = 'linear-gradient(135deg,#1d4ed8,#7c3aed)';
+    }
+}
+
 function showCameraMode() {
     document.getElementById('bannerWrap').style.display = 'none';
     video.style.display = 'block';
@@ -760,6 +799,8 @@ function showCameraMode() {
     document.getElementById('closeCamera').style.display= 'block';
     showCameraArrows(false);
     cameraActive = true;
+    setAiBtn('camera');
+    setStatus('알약을 화면 안에 놓고 촬영하기 버튼을 누르세요');
 }
 
 function showBannerMode() {
@@ -773,6 +814,8 @@ function showBannerMode() {
     showCameraArrows(true);
     captured = false; lastCount = null;
     cameraActive = false;
+    setAiBtn('default');
+    setStatus('📷 아래 버튼을 눌러 카운팅 시작');
 }
 
 function stopCamera() {
