@@ -662,8 +662,8 @@ function aiCount() {
         return;
     }
     if (!video.videoWidth) { setStatus('카메라가 준비 중입니다. 잠시 후 다시 누르세요.'); return; }
-    // 촬영 + 로컬 이미지 감지 (빠르고 인터넷 불필요)
-    handleCapture();
+    // 촬영 + Gemini AI 분석
+    runGemini();
 }
 
 function saveApiKey() {
@@ -679,18 +679,20 @@ function saveApiKey() {
 }
 
 async function runGemini() {
-    // 사진 먼저 찍기
+    // 사진 촬영
     const vw = video.videoWidth, vh = video.videoHeight;
-    const MAX = 1280;
+    // 결과 표시용 캔버스 (원본 해상도)
+    resultCanvas.width  = Math.min(vw, 1280);
+    resultCanvas.height = Math.round(vh * resultCanvas.width / vw);
+    resultCanvas.style.display = 'block';
+    resultCanvas.getContext('2d').drawImage(video, 0, 0, resultCanvas.width, resultCanvas.height);
+
+    // API 전송용 작은 이미지 (빠른 전송)
+    const MAX = 640;
     const pScale = Math.min(MAX / vw, MAX / vh, 1);
     const pw = Math.round(vw * pScale), ph = Math.round(vh * pScale);
     processCanvas.width = pw; processCanvas.height = ph;
     processCanvas.getContext('2d').drawImage(video, 0, 0, pw, ph);
-
-    resultCanvas.width  = Math.min(vw, 1920);
-    resultCanvas.height = Math.round(vh * resultCanvas.width / vw);
-    resultCanvas.style.display = 'block';
-    resultCanvas.getContext('2d').drawImage(processCanvas, 0, 0, resultCanvas.width, resultCanvas.height);
 
     document.getElementById('procOverlay').style.display = 'flex';
     document.querySelector('.proc-text').textContent = 'AI 분석 중...';
@@ -705,47 +707,35 @@ async function runGemini() {
         tc.getContext('2d').drawImage(processCanvas, 0, 0, tc.width, tc.height);
         const b64 = tc.toDataURL('image/jpeg', 0.92).split(',')[1];
 
-        // 작동하는 모델 캐시 사용 (속도 향상)
-        const tryModels = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-        const cached = localStorage.getItem('workingModel');
-        if (cached && !tryModels.includes(cached)) tryModels.unshift(cached);
-        else if (cached) { tryModels.splice(tryModels.indexOf(cached), 1); tryModels.unshift(cached); }
+        setStatus('🤖 AI 분석 중...');
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${geminiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [
+                        { inline_data: { mime_type: 'image/jpeg', data: b64 } },
+                        { text: 'Count the pills (tablets or capsules) in this photo. Answer with a single number only. Example: 8' }
+                    ]}],
+                    generationConfig: { temperature: 0, maxOutputTokens: 5 }
+                })
+            }
+        );
 
-        const makeBody = (text) => JSON.stringify({
-            contents: [{ parts: [
-                { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                { text }
-            ]}],
-            generationConfig: { temperature: 0, maxOutputTokens: 20 }
-        });
-
-        let res = null, usedModel = '';
-        for (const model of tryModels) {
-            setStatus('🤖 AI 분석 중 (' + model + ')...');
-            const r = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-                { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: makeBody('이 사진 속 알약(정제·캡슐) 개수를 세어서 숫자만 답하세요. 반드시 숫자 하나만. 예: 8') }
-            );
-            if (r.ok) { res = r; usedModel = model; localStorage.setItem('workingModel', model); break; }
-            const eJson = await r.json().catch(() => ({}));
+        if (!res.ok) {
+            const eJson = await res.json().catch(() => ({}));
             const msg = eJson.error?.message || '';
-            if (r.status === 401 || r.status === 403) {
+            if (res.status === 401 || res.status === 403) {
                 geminiKey = ''; localStorage.removeItem('geminiKey');
                 throw new Error('API 키 오류: 다시 설정해주세요.');
             }
-            if (msg.includes('no longer available') || msg.includes('not found')) {
-                if (model === cached) localStorage.removeItem('workingModel');
-                continue;
-            }
-            throw new Error(msg || 'API 오류 ' + r.status);
+            throw new Error(msg || 'API 오류 ' + res.status);
         }
-        if (!res) throw new Error('사용 가능한 모델이 없습니다. API 키를 확인해주세요.');
 
         const data  = await res.json();
         const rawText = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-        console.log('[' + usedModel + '] 응답:', rawText);
-        // 숫자 추출
+        console.log('Gemini 응답:', rawText);
         const count = parseInt(rawText.match(/\d+/)?.[0] || '0');
 
         lastCount = count;
@@ -1034,8 +1024,7 @@ function doCapture() {
 }
 
 // ─────────────────────────────────────────────
-// Image processing pipeline — 단순하고 신뢰성 있는 버전
-// 1블롭 = 1알약, 알약 크기 자동 추정
+// Image processing pipeline — 최대한 단순하게
 // ─────────────────────────────────────────────
 function processImage(pw, ph) {
     const ctx     = processCanvas.getContext('2d');
@@ -1050,19 +1039,20 @@ function processImage(pw, ph) {
     // 2) Gaussian blur
     const blurred = gaussBlur5(gray, pw, ph);
 
-    // 3) Otsu 자동 임계값 이진화
-    const thresh = otsu(blurred);
+    // 3) 상위 밝기 30% 픽셀 = 알약 (어두운 배경 가정)
+    const sorted = Array.from(blurred).sort((a,b)=>a-b);
+    const thresh = sorted[Math.floor(sorted.length * 0.70)];
     const bin = new Uint8Array(pw * ph);
     for (let i = 0; i < pw*ph; i++) bin[i] = blurred[i] > thresh ? 1 : 0;
 
-    // 4) 침식 1회 — 붙은 알약 분리 시도
-    let proc = erode(bin, pw, ph);
+    // 4) 침식 없이 바로 블롭 탐색
+    //    알약 1개 = 이미지 면적의 0.1% ~ 20%
+    const minA = pw * ph * 0.001;
+    const maxA = pw * ph * 0.20;
+    const blobs = findBlobs(bin, pw, ph, minA, maxA);
 
-    // 5) 블롭 탐색: 이미지 크기 대비 비율로 범위 지정
-    //    알약 1개 = 이미지 면적의 0.15% ~ 12%
-    const minA = pw * ph * 0.0015;
-    const maxA = pw * ph * 0.12;
-    const blobs = findBlobs(proc, pw, ph, minA, maxA);
+    // 디버그: 임계값과 블롭 수를 상태바에 표시
+    setStatus(`감지: ${blobs.length}개 블롭 (임계값 ${thresh})`);
 
     drawResults(blobs, pw, ph);
     return blobs.length;
