@@ -51,7 +51,7 @@
 
         /* ── Camera ── */
         .camera-wrap {
-            flex: 0 0 32vh;
+            flex: 0 0 28vh;
             position: relative;
             background: #000;
             overflow: hidden;
@@ -415,9 +415,9 @@
 <!-- ② AI 카운팅 버튼 -->
 <div id="aiPanel" style="background:#1e293b;padding:8px 12px;border-top:1px solid #334155;border-bottom:1px solid #334155;flex-shrink:0;">
     <div id="statusBar" style="text-align:center;font-size:13px;color:#64748b;margin-bottom:8px;">📷 아래 버튼을 눌러 카운팅 시작</div>
-    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:44px 16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:38px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <span style="font-size:52px;">📷</span>
-        <span>AI 카운팅 <span style="font-size:22px;font-weight:400;opacity:0.85;">(무료·정확)</span></span>
+    <button onclick="aiCount()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:22px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <span style="font-size:30px;">📷</span>
+        <span>AI 카운팅</span>
     </button>
 
     <!-- 누적 합산 -->
@@ -438,7 +438,7 @@
 </div>
 
 <!-- ③ 계산기 -->
-<div id="calcPanel" style="background:#1e293b;padding:6px 10px 8px;flex:0 0 46vh;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
+<div id="calcPanel" style="background:#1e293b;padding:6px 10px 8px;flex:1;min-height:0;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
     <!-- 디스플레이 -->
     <div style="background:#0f172a;border-radius:10px;padding:6px 14px;">
         <div id="calcExpr" style="font-size:11px;color:#64748b;text-align:right;min-height:14px;"></div>
@@ -658,34 +658,46 @@ async function runGemini() {
         tc.getContext('2d').drawImage(processCanvas, 0, 0, tc.width, tc.height);
         const b64 = tc.toDataURL('image/jpeg', 0.92).split(',')[1];
 
-        const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { inline_data: { mime_type: 'image/jpeg', data: b64 } },
-                            { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
-                        ]
-                    }],
-                    generationConfig: { temperature: 0, maxOutputTokens: 10 }
-                })
+        // 여러 모델 순서대로 시도
+        const tryModels = [
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiKey,
+            'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=' + geminiKey,
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + geminiKey,
+        ];
+        let res = null, lastErr = '';
+        for (const url of tryModels) {
+            setStatus('🤖 AI 분석 중...');
+            try {
+                const r = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { inline_data: { mime_type: 'image/jpeg', data: b64 } },
+                                { text: '이 사진에 알약이 몇 개 있나요? 숫자만 답하세요. 예: 8' }
+                            ]
+                        }],
+                        generationConfig: { temperature: 0, maxOutputTokens: 10 }
+                    })
+                });
+                if (r.ok) { res = r; break; }
+                const eJson = await r.json();
+                lastErr = eJson.error?.message || 'HTTP ' + r.status;
+                if (r.status === 401 || r.status === 403) {
+                    geminiKey = ''; localStorage.removeItem('geminiKey');
+                    throw new Error('API 키 오류: 다시 설정해주세요.');
+                }
+            } catch(fetchErr) {
+                if (fetchErr.message.includes('API 키')) throw fetchErr;
+                lastErr = fetchErr.message;
             }
-        );
-
-        if (!res.ok) {
-            const e = await res.json();
-            if (res.status === 400 || res.status === 401 || res.status === 403) {
-                geminiKey = ''; localStorage.removeItem('geminiKey');
-                throw new Error('API 키가 잘못되었습니다. 다시 설정해주세요.');
-            }
-            throw new Error(e.error?.message || 'API 오류 ' + res.status);
         }
+        if (!res) throw new Error('모델 오류: ' + lastErr);
 
         const data  = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '0';
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        setStatus('AI 응답: ' + rawText.trim().substring(0, 40));
         // 숫자만 추출
         const count = parseInt(rawText.match(/\d+/)?.[0] || '0');
         console.log('Gemini 응답:', rawText, '→', count);
