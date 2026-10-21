@@ -1034,52 +1034,51 @@ function doCapture() {
 }
 
 // ─────────────────────────────────────────────
-// Image processing pipeline (배경색 자동 감지 + 크기 자동 적응)
+// Image processing pipeline v3 — 붙은 알약도 정확하게
 // ─────────────────────────────────────────────
 function processImage(pw, ph) {
     const ctx     = processCanvas.getContext('2d');
     const imgData = ctx.getImageData(0, 0, pw, ph);
     const d       = imgData.data;
 
-    // 1) 네 모서리에서 배경색 추출
-    const cs = Math.max(10, Math.min(40, (pw * 0.08) | 0));
-    let bgR = 0, bgG = 0, bgB = 0, bgN = 0;
-    for (let y = 0; y < cs; y++) {
-        for (let x = 0; x < cs; x++) {
-            for (const i of [y*pw+x, y*pw+(pw-1-x), (ph-1-y)*pw+x, (ph-1-y)*pw+(pw-1-x)]) {
-                bgR += d[i*4]; bgG += d[i*4+1]; bgB += d[i*4+2]; bgN++;
-            }
-        }
-    }
-    bgR /= bgN; bgG /= bgN; bgB /= bgN;
+    // 1) 밝기(grayscale) 계산
+    const gray = new Uint8Array(pw * ph);
+    for (let i = 0; i < pw*ph; i++)
+        gray[i] = (d[i*4]*77 + d[i*4+1]*150 + d[i*4+2]*29) >> 8;
 
-    // 2) 배경과 색차가 큰 픽셀 = 알약 후보
+    // 2) Gaussian blur
+    const blurred = gaussBlur5(gray, pw, ph);
+
+    // 3) Otsu 자동 임계값으로 이진화 (밝은 알약 vs 어두운 배경)
+    const thresh = otsu(blurred);
     const bin = new Uint8Array(pw * ph);
-    const THRESH = 45;
-    for (let i = 0; i < pw * ph; i++) {
-        const dr = d[i*4]-bgR, dg = d[i*4+1]-bgG, db = d[i*4+2]-bgB;
-        bin[i] = (dr*dr + dg*dg + db*db) > THRESH*THRESH ? 1 : 0;
-    }
+    for (let i = 0; i < pw*ph; i++) bin[i] = blurred[i] > thresh ? 1 : 0;
 
-    // 3) 팽창으로 구멍 채우기 → 침식으로 알약 분리
-    let proc = dilateBox(bin, pw, ph, 4);
-    proc = erode(proc, pw, ph);
-    proc = erode(proc, pw, ph);
-    proc = erode(proc, pw, ph);
+    // 4) 침식 1회 (잡음 제거, 최소한으로)
+    let proc = erode(bin, pw, ph);
 
-    // 4) 블롭 탐색 (매우 넓은 범위)
-    const rawBlobs = findBlobs(proc, pw, ph, 80, pw * ph * 0.3);
+    // 5) 전체 이미지에서 블롭 탐색 (가이드 영역 제한 없음)
+    const rawBlobs = findBlobs(proc, pw, ph, 50, pw * ph * 0.5);
     if (rawBlobs.length === 0) { drawResults([], pw, ph); return 0; }
 
-    // 5) 중앙값 크기로 알약 크기 자동 추정
-    const areas = rawBlobs.map(b => b.area).sort((a,b) => a-b);
-    const medArea = areas[Math.floor(areas.length / 2)];
+    // 6) 가장 작은 블롭 = 알약 1개 기준 크기 (단독 알약이 적어도 1개 있다고 가정)
+    const sortedAreas = rawBlobs.map(b => b.area).sort((a,b) => a-b);
+    // 하위 30% 중 중앙값을 단일 알약 크기로 사용
+    const refIdx = Math.max(0, Math.floor(sortedAreas.length * 0.15));
+    const singleArea = sortedAreas[refIdx];
 
-    // 6) 중앙값의 0.2~5배 범위 블롭만 알약으로 인정
-    const blobs = rawBlobs.filter(b => b.area >= medArea * 0.2 && b.area <= medArea * 5);
+    // 7) 각 블롭에서 알약 개수 추정 (큰 블롭은 여러 알약이 붙은 것)
+    const drawBlobs = [];
+    let totalCount = 0;
+    for (const b of rawBlobs) {
+        if (b.area < singleArea * 0.15) continue; // 너무 작은 잡음 제거
+        const n = Math.max(1, Math.round(b.area / singleArea));
+        totalCount += n;
+        drawBlobs.push({ ...b, count: n });
+    }
 
-    drawResults(blobs, pw, ph);
-    return blobs.length;
+    drawResults(drawBlobs, pw, ph);
+    return totalCount;
 }
 
 // ─────────────────────────────────────────────
@@ -1251,11 +1250,13 @@ function drawResults(blobs, pw, ph) {
     // Draw captured photo
     ctx.drawImage(processCanvas, 0, 0, rw, rh);
 
-    // 약매니져 스타일: 흰 테두리 원 + 중앙 핑크 점 + 번호
-    blobs.forEach((b, i) => {
+    // 약매니져 스타일: 흰 테두리 원 + 핑크 점 + 번호
+    let numSoFar = 0;
+    blobs.forEach((b) => {
         const x = b.cx * sx;
         const y = b.cy * sy;
         const r = Math.max(b.r * (sx + sy) / 2, 12);
+        const n = b.count || 1;
 
         // 흰 테두리 원
         ctx.beginPath();
@@ -1274,15 +1275,22 @@ function drawResults(blobs, pw, ph) {
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // 번호 (왼쪽 위)
-        const fs = Math.max(12, r * 0.55);
+        // 번호 배지 (중앙 위)
+        numSoFar += n;
+        const label = n > 1 ? `${numSoFar - n + 1}~${numSoFar}` : `${numSoFar}`;
+        const fs = Math.max(11, Math.min(r * 0.6, 22));
+        const bw = ctx.measureText(label).width + 10;
+        const bh = fs + 6;
+        const bx = x - bw/2, by = y - r - bh - 4;
+        ctx.fillStyle = n > 1 ? '#f59e0b' : '#3b82f6';
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 6);
+        ctx.fill();
         ctx.font = `bold ${fs}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(i+1, x+1, y - r - 6 + 1);
         ctx.fillStyle = '#fff';
-        ctx.fillText(i+1, x, y - r - 6);
+        ctx.fillText(label, x, by + bh/2);
     });
 }
 
