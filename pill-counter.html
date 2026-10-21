@@ -662,8 +662,8 @@ function aiCount() {
         return;
     }
     if (!video.videoWidth) { setStatus('카메라가 준비 중입니다. 잠시 후 다시 누르세요.'); return; }
-    // 촬영 + AI 분석
-    runGemini();
+    // 촬영 + 로컬 이미지 감지 (빠르고 인터넷 불필요)
+    handleCapture();
 }
 
 function saveApiKey() {
@@ -1017,11 +1017,16 @@ function doCapture() {
     document.getElementById('resultNum').textContent      = count;
     document.getElementById('resultBadge').style.display  = 'block';
     document.getElementById('procOverlay').style.display  = 'none';
+    document.getElementById('accumPanel').style.display   = 'block';
+    document.getElementById('addBtn').style.background    = '#3b82f6';
+    setAiBtn('retake');
 
     if (count === 0) {
-        setStatus('감지 실패 — 배경 설정을 바꾸거나 크기 슬라이더를 조정해보세요');
+        setStatus('감지 실패 — 어두운 배경에 알약을 놓고 다시 찍어보세요');
+        showToast('알약을 감지하지 못했어요.\n어두운 배경(검정/파랑)에 놓고 다시 찍어보세요.', 'error', 5000);
     } else {
-        setStatus(`✅ 총 ${count}개 감지됨 · 💾 버튼으로 기록 저장`);
+        setStatus(`✅ ${count}개 감지됨 · ➕합산 또는 💾저장`);
+        showToast(count + '개 감지됨! 📍', 'success', 3000);
     }
     captured = true;
 }
@@ -1265,37 +1270,28 @@ function drawResults(blobs, pw, ph) {
     // Draw captured photo
     ctx.drawImage(processCanvas, 0, 0, rw, rh);
 
-    // Draw circle + number for each detected pill
+    // Draw dot + circle for each detected pill (약매니져 스타일)
     blobs.forEach((b, i) => {
         const x  = b.cx * sx;
         const y  = b.cy * sy;
-        const r  = Math.max(b.r * (sx + sy) / 2 + 5, 16);
+        const r  = Math.max(b.r * (sx + sy) / 2 + 4, 14);
 
-        // Filled circle
+        // 반투명 원형 테두리
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(34,197,94,0.20)';
-        ctx.fill();
-
-        // Border
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth   = Math.max(2.5, r * 0.1);
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth   = Math.max(2, r * 0.08);
         ctx.stroke();
 
-        // Number label
-        const fs = Math.max(11, r * 0.65);
-        ctx.font          = `bold ${fs}px -apple-system, sans-serif`;
-        ctx.textAlign     = 'center';
-        ctx.textBaseline  = 'middle';
-
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.75)';
-        ctx.fillText(i + 1, x + 1, y + 1);
-        // Label
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(i + 1, x, y);
+        // 중앙 핑크 점
+        const dotR = Math.max(5, r * 0.22);
+        ctx.beginPath();
+        ctx.arc(x, y, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = '#f472b6';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
     });
 }
 
