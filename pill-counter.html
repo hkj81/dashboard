@@ -984,10 +984,12 @@ function handleCapture() {
         try {
             doCapture();
         } catch(e) {
-            setStatus('오류: ' + e.message);
+            showToast(e.message);
+            setStatus('다시 촬영해주세요');
             console.error(e);
             document.getElementById('procOverlay').style.display = 'none';
             document.getElementById('guideWrap').style.display   = 'flex';
+            setAiBtn('camera');
         }
     }, 80));
 }
@@ -1048,9 +1050,7 @@ function processImage(pw, ph) {
     // 2) Gaussian blur 5×5
     const blurred = gaussBlur5(gray, pw, ph);
 
-    const sl       = parseInt(document.getElementById('sizeSlider').value);
-    const areaTable= [150, 320, 550, 850, 1250, 1800, 2600, 3800, 5500, 8000];
-    const baseArea = areaTable[sl - 1] || 1250;
+    const baseArea = 1250; // 중간 크기 고정
     const estR     = Math.max(5, Math.round(Math.sqrt(baseArea / Math.PI)));
 
     let proc;
@@ -1090,7 +1090,7 @@ function processImage(pw, ph) {
         for (let i = 0; i < ep; i++) proc = erode(proc, pw, ph);
     }
 
-    const allBlobs = findBlobs(proc, pw, ph, baseArea * 0.2, baseArea * 6);
+    const allBlobs = findBlobs(proc, pw, ph, baseArea * 0.1, baseArea * 10);
 
     // 가이드 박스 안쪽만 인정 (배경 오감지 차단)
     const gx1 = pw * 0.09, gx2 = pw * 0.91;
