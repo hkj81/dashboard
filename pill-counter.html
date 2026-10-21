@@ -1086,7 +1086,7 @@ function processImage(pw, ph) {
         const thresh = otsu(blurred);
         proc = new Uint8Array(pw * ph);
         for (let i = 0; i < proc.length; i++) proc[i] = blurred[i] > thresh ? 1 : 0;
-        const ep = sl <= 3 ? 1 : sl <= 7 ? 2 : 3;
+        const ep = 2; // 중간값 고정
         for (let i = 0; i < ep; i++) proc = erode(proc, pw, ph);
     }
 
