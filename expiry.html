@@ -583,7 +583,7 @@ async function doAnalysis() {
       }
       recallGroups[key].수량 += parseFloat(row['수량'] || 0);
     });
-    var ALL_RECALL_DB = Object.values(recallGroups).filter(function(r){ return r.수량 > 0; });
+    var ALL_RECALL_DB = Object.values(recallGroups);
 
     // 내 이름 입력 시 담당자 필드 덮어쓰기
     var myName = document.getElementById('myName') ? document.getElementById('myName').value.trim() : '';
@@ -902,7 +902,7 @@ function renderTable() {
     if (pharmacy && r['매출처명'] !== pharmacy) return false;
     if (search && !r['상품명'].toLowerCase().includes(search)) return false;
     return true;
-  });
+  }).sort(function(a,b){ return a['잔여일수'] - b['잔여일수']; });
   var hiddenCount = IMPARK.filter(function(r){ return del.has(itemKey(r)); }).length;
   document.getElementById('countLabel').textContent = rows.length + '건 표시 중';
   var hi = document.getElementById('hiddenInfo');
@@ -939,15 +939,17 @@ function buildQueries(raw) {
 }
 
 function doRecallSearch() {
-  var RECALL_DB = window._RECALL_DB || [];
+  var RECALL_DB = window._RECALL_DB || window._ALL_RECALL_DB || [];
   var type = document.getElementById('searchType').value;
   var raw = document.getElementById('recallInput').value.trim();
   if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
-  var queries = buildQueries(raw);
-  var results = RECALL_DB.filter(function(r) {
-    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
-    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
-  });
+  var results;
+  if (type === 'code') {
+    var queries = buildQueries(raw);
+    results = RECALL_DB.filter(function(r) { return queries.some(function(q){ return r['코드'] === q; }); });
+  } else {
+    results = RECALL_DB.filter(function(r) { return r['상품명'].toLowerCase().includes(raw.toLowerCase()); });
+  }
   var resultEl = document.getElementById('recallResult');
   var summaryEl = document.getElementById('recallSummary');
   var tbody = document.getElementById('recallTableBody');
@@ -977,15 +979,17 @@ function clearRecall() {
 }
 
 function doPriceSearch() {
-  var RECALL_DB = window._RECALL_DB || [];
+  var RECALL_DB = window._RECALL_DB || window._ALL_RECALL_DB || [];
   var type = document.getElementById('priceSearchType').value;
   var raw = document.getElementById('priceInput').value.trim();
   if (!raw) { alert('코드 또는 품목명을 입력하세요.'); return; }
-  var queries = buildQueries(raw);
-  var results = RECALL_DB.filter(function(r) {
-    if (type === 'code') return queries.some(function(q){ return r['코드'] === q; });
-    else return queries.some(function(q){ return r['상품명'].toLowerCase().includes(q.toLowerCase()); });
-  });
+  var results;
+  if (type === 'code') {
+    var queries = buildQueries(raw);
+    results = RECALL_DB.filter(function(r) { return queries.some(function(q){ return r['코드'] === q; }); });
+  } else {
+    results = RECALL_DB.filter(function(r) { return r['상품명'].toLowerCase().includes(raw.toLowerCase()); });
+  }
   var resultEl = document.getElementById('priceResult');
   var summaryEl = document.getElementById('priceSummary');
   var tbody = document.getElementById('priceTableBody');
